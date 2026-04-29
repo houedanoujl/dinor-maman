@@ -8,15 +8,16 @@
 @source '../../app/Filament/**/*.php';
 
 @theme {
-    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans:    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+                    'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Playfair Display', ui-serif, Georgia, 'Times New Roman', serif;
 
-    --color-dinor-red:    #D61B23;
-    --color-dinor-gold:   #A98539;
-    --color-dinor-cream:  #FFF8F0;
+    --color-dinor-red:    #CE1126;
+    --color-dinor-gold:   #AA812A;
+    --color-dinor-cream:  #F9FAFB;
     --color-dinor-dark:   #1A1A1A;
 
-    --shadow-dinor: 0 8px 24px rgba(214, 27, 35, 0.15);
+    --shadow-dinor: 0 10px 30px rgba(206, 17, 38, 0.15);
 }
 
 @layer components {
@@ -30,5 +31,16 @@
         @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl
                bg-dinor-red text-white font-semibold hover:bg-dinor-red/90
                shadow-dinor transition;
+    }
+
+    .btn-ghost {
+        @apply inline-flex items-center justify-center rounded-xl border border-gray-300
+               px-5 py-2.5 font-semibold text-dinor-dark transition
+               hover:border-dinor-red hover:text-dinor-red;
+    }
+
+    .font-display {
+        font-family: var(--font-display);
+        font-feature-settings: "lnum";
     }
 }

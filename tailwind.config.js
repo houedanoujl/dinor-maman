@@ -18,17 +18,18 @@ export default {
         extend: {
             colors: {
                 dinor: {
-                    red:   '#D61B23',
-                    gold:  '#A98539',
-                    cream: '#FFF8F0',
+                    red:   '#CE1126',
+                    gold:  '#AA812A',
+                    cream: '#F9FAFB',
                     dark:  '#1A1A1A',
                 },
             },
             fontFamily: {
-                sans: ['Poppins', ...defaultTheme.fontFamily.sans],
+                sans:    ['Inter', ...defaultTheme.fontFamily.sans],
+                display: ['"Playfair Display"', ...defaultTheme.fontFamily.serif],
             },
             boxShadow: {
-                dinor: '0 8px 24px rgba(214, 27, 35, 0.15)',
+                dinor: '0 10px 30px rgba(206, 17, 38, 0.15)',
             },
         },
     },

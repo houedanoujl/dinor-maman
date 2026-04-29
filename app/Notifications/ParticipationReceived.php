@@ -21,10 +21,10 @@ class ParticipationReceived extends Notification
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Dinor — Participation reçue')
+            ->subject('un concept de cuisine avec maman - Participation recue')
             ->greeting("Bonjour {$this->participant->first_name},")
-            ->line('Votre participation au jeu "Un moment de cuisine avec maman" a bien été enregistrée.')
-            ->line('Elle est actuellement en attente de validation par notre équipe.')
-            ->salutation('À bientôt sur Dinor !');
+            ->line('Votre participation au jeu "un concept de cuisine avec maman" a bien ete enregistree.')
+            ->line('Elle est actuellement en attente de validation par notre equipe.')
+            ->salutation('A bientot sur un concept de cuisine avec maman !');
     }
 }

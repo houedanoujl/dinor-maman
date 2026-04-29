@@ -4,11 +4,17 @@ namespace App\Livewire;
 
 use App\Models\Participant;
 use App\Notifications\ParticipationReceived;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
+#[Layout('layouts.app')]
 class ContestForm extends Component
 {
     use WithFileUploads;
@@ -28,27 +34,33 @@ class ContestForm extends Component
     #[Validate('nullable|email|max:150')]
     public string $email = '';
 
-    #[Validate('required|image|mimes:jpeg,png,webp|max:5120')] // 5 Mo
+    #[Validate('required|image|mimes:jpeg,png,webp|max:5120')]
     public $photo;
 
     public bool $submitted = false;
 
     public function submit(): void
     {
-        $data = $this->validate();
+        $this->ensureSubmissionIsAllowed();
 
-        $participant = Participant::create([
-            'first_name' => $this->first_name,
-            'last_name'  => $this->last_name,
-            'phone'      => $this->phone,
-            'city'       => $this->city,
-            'email'      => $this->email ?: null,
-            'status'     => Participant::STATUS_PENDING,
-        ]);
+        $this->validate();
 
-        $participant->addMedia($this->photo->getRealPath())
-            ->usingFileName(uniqid('dinor_', true) . '.' . $this->photo->getClientOriginalExtension())
-            ->toMediaCollection('photo');
+        $participant = DB::transaction(function () {
+            $participant = Participant::create([
+                'first_name' => trim($this->first_name),
+                'last_name'  => trim($this->last_name),
+                'phone'      => trim($this->phone),
+                'city'       => trim($this->city),
+                'email'      => $this->email ? strtolower(trim($this->email)) : null,
+                'status'     => Participant::STATUS_PENDING,
+            ]);
+
+            $participant->addMedia($this->photo->getRealPath())
+                ->usingFileName(Str::uuid() . '.' . $this->safePhotoExtension())
+                ->toMediaCollection('photo');
+
+            return $participant;
+        });
 
         if ($participant->email) {
             Notification::route('mail', $participant->email)
@@ -58,11 +70,33 @@ class ContestForm extends Component
         $this->submitted = true;
         $this->reset(['first_name', 'last_name', 'phone', 'city', 'email', 'photo']);
 
-        session()->flash('success', "Votre participation a bien été enregistrée et est en attente de validation par notre équipe.");
+        session()->flash('success', 'Votre participation a bien ete enregistree et est en attente de validation par notre equipe.');
     }
 
     public function render()
     {
         return view('livewire.contest-form');
+    }
+
+    protected function ensureSubmissionIsAllowed(): void
+    {
+        $ipKey = 'contest-submit:ip:' . request()->ip();
+        $phoneKey = 'contest-submit:phone:' . hash('sha256', trim($this->phone));
+
+        if (RateLimiter::tooManyAttempts($ipKey, 5) || RateLimiter::tooManyAttempts($phoneKey, 3)) {
+            throw ValidationException::withMessages([
+                'phone' => 'Trop de tentatives. Veuillez reessayer plus tard.',
+            ]);
+        }
+
+        RateLimiter::hit($ipKey, 60);
+        RateLimiter::hit($phoneKey, 3600);
+    }
+
+    protected function safePhotoExtension(): string
+    {
+        $extension = strtolower((string) $this->photo->extension());
+
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true) ? $extension : 'jpg';
     }
 }

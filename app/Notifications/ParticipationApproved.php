@@ -21,11 +21,11 @@ class ParticipationApproved extends Notification
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Félicitations, votre photo est en ligne !')
+            ->subject('Felicitations, votre photo est en ligne !')
             ->greeting("Bravo {$this->participant->first_name} !")
-            ->line('Votre photo vient d\'être validée et apparaît dans la galerie publique.')
-            ->line('Partagez l\'application avec vos proches pour récolter un maximum de votes.')
+            ->line('Votre photo vient d\'etre validee et apparait dans la galerie publique.')
+            ->line('Partagez l\'application avec vos proches pour recolter un maximum de votes.')
             ->action('Voir ma photo', url('/galerie'))
-            ->salutation('L\'équipe Dinor');
+            ->salutation('L\'equipe un concept de cuisine avec maman');
     }
 }

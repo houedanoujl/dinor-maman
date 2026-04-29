@@ -26,7 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('Dinor Admin')
+            ->brandName('un concept de cuisine avec maman')
             ->colors([
                 'primary' => Color::hex('#D61B23'),
                 'warning' => Color::hex('#A98539'),

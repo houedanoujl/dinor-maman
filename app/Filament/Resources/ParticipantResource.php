@@ -154,11 +154,11 @@ class ParticipantResource extends Resource
                                 ->each(function ($p, $i) use ($out) {
                                     fputcsv($out, [
                                         $i + 1,
-                                        $p->first_name,
-                                        $p->last_name,
-                                        $p->phone,
-                                        $p->city,
-                                        $p->email,
+                                        self::csvCell($p->first_name),
+                                        self::csvCell($p->last_name),
+                                        self::csvCell($p->phone),
+                                        self::csvCell($p->city),
+                                        self::csvCell($p->email),
                                         $p->vote_count,
                                     ]);
                                 });
@@ -176,5 +176,12 @@ class ParticipantResource extends Resource
             'create' => Pages\CreateParticipant::route('/create'),
             'edit'   => Pages\EditParticipant::route('/{record}/edit'),
         ];
+    }
+
+    protected static function csvCell(mixed $value): string
+    {
+        $value = str_replace(["\r", "\n"], ' ', (string) $value);
+
+        return preg_match('/^[\s]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
     }
 }
