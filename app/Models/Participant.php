@@ -27,6 +27,7 @@ class Participant extends Model implements HasMedia
         'status',
         'email',
         'approved_at',
+        'rejection_reason',
     ];
 
     protected $casts = [

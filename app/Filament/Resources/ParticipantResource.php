@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ParticipantResource\Pages;
 use App\Models\Participant;
 use App\Notifications\ParticipationApproved;
+use App\Notifications\ParticipationRejected;
+use App\Services\SmsNotifier;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification as FilamentNotification;
@@ -55,6 +57,11 @@ class ParticipantResource extends Resource
                             'rejected' => 'Rejeté',
                         ])
                         ->required(),
+                    Forms\Components\Textarea::make('rejection_reason')
+                        ->label('Motif de rejet')
+                        ->rows(3)
+                        ->placeholder('Précisez la raison du rejet visible par le participant…')
+                        ->visible(fn ($get) => $get('status') === 'rejected'),
                 ]),
             Forms\Components\SpatieMediaLibraryFileUpload::make('photo')
                 ->collection('photo')
@@ -97,11 +104,19 @@ class ParticipantResource extends Resource
                         $record->update([
                             'status' => $newStatus,
                             'approved_at' => $state ? now() : null,
+                            'rejection_reason' => $state ? null : $record->rejection_reason,
                         ]);
 
-                        if ($state && $record->email) {
-                            Notification::route('mail', $record->email)
-                                ->notify(new ParticipationApproved($record));
+                        if ($state) {
+                            if ($record->email) {
+                                Notification::route('mail', $record->email)
+                                    ->notify(new ParticipationApproved($record));
+                            }
+
+                            app(SmsNotifier::class)->send(
+                                $record->phone,
+                                'Bonne nouvelle ! Votre photo est approuvee. Partagez ce lien: ' . route('participant.show', $record) . '?ref=' . $record->id
+                            );
                         }
 
                         FilamentNotification::make()
@@ -134,8 +149,35 @@ class ParticipantResource extends Resource
                     ->color('danger')
                     ->icon('heroicon-o-x-mark')
                     ->visible(fn ($record) => $record->status !== 'rejected')
-                    ->requiresConfirmation()
-                    ->action(fn ($record) => $record->update(['status' => 'rejected'])),
+                    ->form([
+                        Forms\Components\Textarea::make('rejection_reason')
+                            ->label('Motif de rejet')
+                            ->rows(4)
+                            ->placeholder('Expliquez la raison du rejet (sera envoyé au participant par email si disponible)…')
+                            ->required(),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $record->update([
+                            'status'           => Participant::STATUS_REJECTED,
+                            'rejection_reason' => $data['rejection_reason'],
+                        ]);
+
+                        if ($record->email) {
+                            \Illuminate\Support\Facades\Notification::route('mail', $record->email)
+                                ->notify(new ParticipationRejected($record));
+                        }
+
+                        app(SmsNotifier::class)->send(
+                            $record->phone,
+                            'Votre participation n\'a pas ete retenue. Motif: ' . $data['rejection_reason']
+                        );
+
+                        FilamentNotification::make()
+                            ->danger()
+                            ->title('Participation rejetée')
+                            ->body($record->email ? 'Le participant a été notifié par email.' : 'Aucun email — le participant n\'a pas été notifié.')
+                            ->send();
+                    }),
             ])
             ->headerActions([
                 Actions\Action::make('exportRanking')

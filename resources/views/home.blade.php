@@ -9,9 +9,8 @@
                 Concours photo en cours
             </p>
             <h1 class="font-display text-4xl font-bold leading-[1.05] text-dinor-dark md:text-6xl">
-                Cuisine,<br />
-                <span class="text-dinor-red">souvenirs</span> &<br />
-                amour de maman.
+                Un moment de<br />
+                <span class="text-dinor-red">cuisine</span> avec maman
             </h1>
             <p class="mt-6 max-w-xl text-lg leading-8 text-gray-600">
                 Partagez votre plus beau moment en cuisine, invitez vos proches à voter
@@ -20,6 +19,11 @@
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a href="{{ route('contest.form') }}" class="btn-dinor">Je participe</a>
                 <a href="{{ route('contest.gallery') }}" class="btn-ghost">Voir la galerie</a>
+            </div>
+
+            <div x-data="countdown('{{ $contestEndsAt }}')" class="mt-5 inline-flex items-center gap-2 rounded-xl border border-dinor-gold/30 bg-dinor-gold/10 px-4 py-2 text-sm text-dinor-dark">
+                <span class="font-semibold">Fin du concours dans:</span>
+                <span class="font-bold" x-text="label"></span>
             </div>
 
             <dl class="mt-10 flex flex-wrap gap-x-10 gap-y-4 text-sm">
@@ -37,7 +41,7 @@
         <div class="relative">
             @if ($collage->isNotEmpty() || $topParticipants->isNotEmpty())
                 @php $cards = $topParticipants->concat($collage)->take(5); @endphp
-                <div class="grid grid-cols-6 grid-rows-6 gap-3 h-[480px] md:h-[560px]">
+                <div class="grid h-120 grid-cols-6 grid-rows-6 gap-3 md:h-140">
                     @foreach ($cards as $i => $p)
                         @php
                             $spans = [
@@ -55,11 +59,11 @@
                                 <img src="{{ $img }}" alt="{{ $p->full_name }}"
                                      class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                             @else
-                                <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-dinor-red to-dinor-gold text-4xl font-extrabold text-white">
+                                <div class="flex h-full w-full items-center justify-center bg-linear-to-br from-dinor-red to-dinor-gold text-4xl font-extrabold text-white">
                                     {{ strtoupper(substr($p->first_name, 0, 1) . substr($p->last_name, 0, 1)) }}
                                 </div>
                             @endif
-                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-3 text-white">
+                            <div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/20 to-transparent p-3 text-white">
                                 <p class="truncate text-sm font-semibold">{{ $p->full_name }}</p>
                                 <p class="flex items-center gap-1 text-xs opacity-90">
                                     <svg class="h-3 w-3 text-dinor-gold" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.5-9.1C1.1 8.6 3.4 5 7 5c2 0 3.6 1 5 2.6C13.4 6 15 5 17 5c3.6 0 5.9 3.6 4.5 6.9C19.5 16.4 12 21 12 21z"/></svg>
@@ -70,7 +74,7 @@
                     @endforeach
                 </div>
             @else
-                <div class="flex aspect-square items-center justify-center rounded-2xl bg-gradient-to-br from-dinor-red to-dinor-gold p-12 text-center text-white">
+                <div class="flex aspect-square items-center justify-center rounded-2xl bg-linear-to-br from-dinor-red to-dinor-gold p-12 text-center text-white">
                     <p class="font-display text-2xl">Soyez la première participation publiée !</p>
                 </div>
             @endif
@@ -90,7 +94,7 @@
     <div class="grid gap-5 md:grid-cols-3">
         @forelse ($topParticipants as $participant)
             <article class="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-dinor">
-                <a href="{{ route('participant.show', $participant) }}" class="relative block aspect-[4/5] bg-gradient-to-br from-dinor-red to-dinor-gold">
+                <a href="{{ route('participant.show', $participant) }}" class="relative block aspect-4/5 bg-linear-to-br from-dinor-red to-dinor-gold">
                     @if ($participant->getFirstMediaUrl('photo', 'card'))
                         <img src="{{ $participant->getFirstMediaUrl('photo', 'card') }}"
                              alt="{{ $participant->full_name }}"

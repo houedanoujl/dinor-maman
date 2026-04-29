@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'sms' => [
+        'provider' => env('SMS_PROVIDER', 'log'),
+        'from' => env('SMS_FROM'),
+        'api_url' => env('SMS_API_URL'),
+        'api_key' => env('SMS_API_KEY'),
+        'whatsapp_enabled' => (bool) env('WHATSAPP_ENABLED', false),
+    ],
+
 ];

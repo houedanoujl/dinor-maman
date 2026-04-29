@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Models\Participant;
 use App\Notifications\ParticipationReceived;
+use App\Services\SmsNotifier;
+use App\Support\ContestSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
@@ -39,8 +41,22 @@ class ContestForm extends Component
 
     public bool $submitted = false;
 
+    #[Validate('accepted')]
+    public bool $consent = false;
+
+    protected function contestEnded(): bool
+    {
+        return now()->greaterThan(ContestSettings::endsAt());
+    }
+
     public function submit(): void
     {
+        if ($this->contestEnded()) {
+            throw ValidationException::withMessages([
+                'photo' => 'Le concours est terminé. Les participations sont clôturées.',
+            ]);
+        }
+
         $this->ensureSubmissionIsAllowed();
 
         $this->validate();
@@ -67,10 +83,13 @@ class ContestForm extends Component
                 ->notify(new ParticipationReceived($participant));
         }
 
-        $this->submitted = true;
-        $this->reset(['first_name', 'last_name', 'phone', 'city', 'email', 'photo']);
+        app(SmsNotifier::class)->send(
+            $participant->phone,
+            "Bonjour {$participant->first_name}, votre participation a bien ete recue et est en attente de validation."
+        );
 
-        session()->flash('success', 'Votre participation a bien ete enregistree et est en attente de validation par notre equipe.');
+        $this->submitted = true;
+        $this->reset(['first_name', 'last_name', 'phone', 'city', 'email', 'photo', 'consent']);
     }
 
     public function render()

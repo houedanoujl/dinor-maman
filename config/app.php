@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'un concept de cuisine avec maman'),
+    'name' => env('APP_NAME', 'Un moment de cuisine avec maman'),
 
     /*
     |--------------------------------------------------------------------------

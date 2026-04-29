@@ -26,7 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('un concept de cuisine avec maman')
+            ->brandName('Un moment de cuisine avec maman')
             ->colors([
                 'primary' => Color::hex('#D61B23'),
                 'warning' => Color::hex('#A98539'),
@@ -39,6 +39,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
+                \App\Filament\Widgets\TopThreeWidget::class,
+                \App\Filament\Widgets\TopParticipantsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

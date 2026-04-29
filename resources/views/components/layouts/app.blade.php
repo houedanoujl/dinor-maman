@@ -32,7 +32,7 @@
                 <svg viewBox="0 0 24 24" class="h-4 w-4 text-dinor-gold" fill="currentColor" aria-hidden="true">
                     <path d="M11 2v8.59l-2.3-2.3-1.4 1.42L12 14.41l4.7-4.7-1.4-1.42-2.3 2.3V2zM4 16h16v2H4z" />
                 </svg>
-                &copy; {{ date('Y') }} Dinor — un concept de cuisine avec maman
+                &copy; {{ date('Y') }} Dinor — un moment de cuisine avec maman
             </span>
             <span class="text-xs text-gray-400">Concours photo</span>
         </div>

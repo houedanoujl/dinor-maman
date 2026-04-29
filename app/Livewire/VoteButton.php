@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Participant;
 use App\Models\Vote;
+use App\Support\ContestSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Component;
@@ -23,6 +24,11 @@ class VoteButton extends Component
 
     public function toggleVote(): void
     {
+        if (now()->greaterThan(ContestSettings::endsAt())) {
+            $this->dispatch('toast', type: 'error', message: 'Le concours est termine. Les votes sont clos.');
+            return;
+        }
+
         // 1. Rate limiting global par IP : max 30 votes / minute
         $ipKey = 'vote:ip:' . request()->ip();
         if (RateLimiter::tooManyAttempts($ipKey, 30)) {

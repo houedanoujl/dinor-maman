@@ -13,7 +13,7 @@
                      alt="{{ $participant->full_name }}"
                      class="h-full w-full object-cover" />
             @else
-                <div class="flex aspect-square w-full items-center justify-center bg-gradient-to-br from-dinor-red to-dinor-gold text-9xl font-extrabold text-white">
+                <div class="flex aspect-square w-full items-center justify-center bg-linear-to-br from-dinor-red to-dinor-gold text-9xl font-extrabold text-white">
                     {{ strtoupper(substr($participant->first_name, 0, 1) . substr($participant->last_name, 0, 1)) }}
                 </div>
             @endif
@@ -47,11 +47,11 @@
 
             <div class="mt-6 flex flex-wrap gap-2">
                 <button type="button"
-                        onclick="navigator.clipboard?.writeText(window.location.href); this.innerText='Lien copié ✓'"
+                        onclick="navigator.clipboard?.writeText('{{ $shareUrl }}'); this.innerText='Lien copié ✓'"
                         class="btn-ghost text-sm">
-                    Copier le lien du profil
+                    Copier mon lien de partage
                 </button>
-                <a href="https://wa.me/?text={{ urlencode($participant->full_name . ' — ' . url()->current()) }}"
+                <a href="https://wa.me/?text={{ urlencode($participant->full_name . ' — ' . $shareUrl) }}"
                    target="_blank" rel="noopener"
                    class="btn-ghost text-sm">
                     Partager sur WhatsApp
@@ -73,7 +73,7 @@
                                      alt="{{ $p->full_name }}"
                                      class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                             @else
-                                <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-dinor-red to-dinor-gold text-4xl font-extrabold text-white">
+                                <div class="flex h-full w-full items-center justify-center bg-linear-to-br from-dinor-red to-dinor-gold text-4xl font-extrabold text-white">
                                     {{ strtoupper(substr($p->first_name, 0, 1) . substr($p->last_name, 0, 1)) }}
                                 </div>
                             @endif

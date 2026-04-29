@@ -21,10 +21,12 @@ class ParticipationReceived extends Notification
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('un concept de cuisine avec maman - Participation recue')
+            ->subject('Un moment de cuisine avec maman — Participation reçue')
             ->greeting("Bonjour {$this->participant->first_name},")
-            ->line('Votre participation au jeu "un concept de cuisine avec maman" a bien ete enregistree.')
-            ->line('Elle est actuellement en attente de validation par notre equipe.')
-            ->salutation('A bientot sur un concept de cuisine avec maman !');
+            ->line('Votre participation au concours **Un moment de cuisine avec maman** a bien été enregistrée.')
+            ->line('Elle est actuellement en attente de validation par notre équipe. Vous recevrez un email dès qu\'elle sera approuvée.')
+            ->line('En attendant, n\'hésitez pas à prévenir vos proches pour qu\'ils soient prêts à voter dès la publication !')
+            ->action('Voir la galerie', route('contest.gallery'))
+            ->salutation('À bientôt sur Un moment de cuisine avec maman !');
     }
 }

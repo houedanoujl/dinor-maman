@@ -6,33 +6,46 @@ use App\Models\Participant;
 use App\Models\Vote;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\DB;
 
 class TopParticipantsWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
 
-    protected ?string $pollingInterval = '15s';
+    protected ?string $pollingInterval = '30s';
 
     protected function getStats(): array
     {
-        $top = Participant::approved()
-            ->orderByDesc('vote_count')
-            ->take(3)
-            ->get();
+        $today = now()->startOfDay();
+        $participantsToday = Participant::where('created_at', '>=', $today)->count();
+        $votesToday = Vote::where('created_at', '>=', $today)->count();
 
-        $stats = [
-            Stat::make('Participants', Participant::count()),
-            Stat::make('En attente', Participant::pending()->count())->color('warning'),
-            Stat::make('Total des votes', Vote::count())->color('success'),
+        $total = Participant::count();
+        $approved = Participant::approved()->count();
+        $validationRate = $total > 0 ? round(($approved / $total) * 100, 1) : 0;
+
+        $topCities = Participant::query()
+            ->select('city', DB::raw('COUNT(*) as total'))
+            ->groupBy('city')
+            ->orderByDesc('total')
+            ->limit(3)
+            ->pluck('total', 'city')
+            ->map(fn ($count, $city) => $city . ': ' . $count)
+            ->implode(' | ');
+
+        return [
+            Stat::make('Participations/jour', (string) $participantsToday)
+                ->description('Nouvelles soumissions aujourd\'hui')
+                ->color('primary'),
+            Stat::make('Votes/jour', (string) $votesToday)
+                ->description('Votes enregistres aujourd\'hui')
+                ->color('success'),
+            Stat::make('Taux de validation', $validationRate . '%')
+                ->description($approved . ' approuves / ' . $total . ' total')
+                ->color('warning'),
+            Stat::make('Top villes', $topCities ?: 'Aucune donnee')
+                ->description('Villes les plus actives')
+                ->color('gray'),
         ];
-
-        $medals = ['🥇', '🥈', '🥉'];
-        foreach ($top as $i => $p) {
-            $stats[] = Stat::make("{$medals[$i]} {$p->full_name}", $p->vote_count . ' votes')
-                ->description($p->city)
-                ->color('warning');
-        }
-
-        return $stats;
     }
 }
