@@ -88,6 +88,9 @@ class ContestForm extends Component
             "Bonjour {$participant->first_name}, votre participation a bien ete recue et est en attente de validation."
         );
 
+        // Connecte le participant via session pour qu'il accède à son espace
+        session(['participant_token' => $participant->dashboard_token]);
+
         $this->submitted = true;
         $this->reset(['first_name', 'last_name', 'phone', 'city', 'email', 'photo', 'consent']);
     }

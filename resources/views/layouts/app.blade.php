@@ -25,10 +25,13 @@
                           @if(request()->routeIs('contest.gallery')) border-b-2 border-dinor-red @endif">
                     Galerie
                 </a>
-                <a href="{{ route('contest.form') }}"
-                   class="inline-flex items-center justify-center rounded-full bg-dinor-red px-5 py-2 font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">
-                    Participer
-                </a>
+                @if(! session('participant_token'))
+                    <a href="{{ route('contest.form') }}"
+                       class="inline-flex items-center justify-center rounded-full bg-dinor-red px-5 py-2 font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">
+                        Participer
+                    </a>
+                @endif
+                <x-user-menu />
             </nav>
         </div>
     </header>

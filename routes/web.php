@@ -98,6 +98,9 @@ Route::get('/profil/{participant}', function (Participant $participant) {
 Route::get('/mon-espace/{token}', function (string $token) {
     $participant = Participant::where('dashboard_token', $token)->firstOrFail();
 
+    // Mémorise le participant en session pour afficher son menu utilisateur
+    session(['participant_token' => $participant->dashboard_token]);
+
     // Classement (uniquement si approuvé)
     $rank = null;
     $totalApproved = Participant::approved()->count();
@@ -145,6 +148,11 @@ Route::get('/mon-espace/{token}', function (string $token) {
         'title' => 'Mon espace — ' . $participant->full_name,
     ]);
 })->middleware('throttle:60,1')->name('participant.dashboard');
+
+Route::post('/deconnexion', function () {
+    session()->forget('participant_token');
+    return redirect()->route('home')->with('status', 'Vous êtes déconnecté.');
+})->name('participant.logout');
 
 Route::get('/gagnants', function () {
     $cycle = now()->format('Y-m');
