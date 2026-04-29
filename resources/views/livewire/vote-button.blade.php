@@ -1,4 +1,3 @@
-@php $contestEnded = now()->greaterThan(config('contest.ends_at')); @endphp
 <button wire:click="toggleVote"
         wire:loading.attr="disabled"
         @disabled($hasVoted || $contestEnded)

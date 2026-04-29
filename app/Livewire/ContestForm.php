@@ -46,7 +46,24 @@ class ContestForm extends Component
 
     protected function contestEnded(): bool
     {
-        return now()->greaterThan(ContestSettings::endsAt());
+        return ContestSettings::isEnded();
+    }
+
+    protected function uploadOpen(): bool
+    {
+        return ContestSettings::isUploadPhase();
+    }
+
+    public function mount()
+    {
+        if ($this->contestEnded()) {
+            return redirect()->route('winners.index')
+                ->with('status', 'Le concours est terminé. Découvrez les gagnants !');
+        }
+        if (! $this->uploadOpen()) {
+            return redirect()->route('contest.gallery')
+                ->with('status', "La phase d'upload est terminée. Vous pouvez continuer à voter !");
+        }
     }
 
     public function submit(): void
@@ -54,6 +71,12 @@ class ContestForm extends Component
         if ($this->contestEnded()) {
             throw ValidationException::withMessages([
                 'photo' => 'Le concours est terminé. Les participations sont clôturées.',
+            ]);
+        }
+
+        if (! $this->uploadOpen()) {
+            throw ValidationException::withMessages([
+                'photo' => "La phase d'upload est terminée. Les nouvelles participations ne sont plus acceptées.",
             ]);
         }
 

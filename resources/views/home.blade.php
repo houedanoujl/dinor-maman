@@ -4,27 +4,46 @@
 <section class="relative overflow-hidden">
     <div class="container mx-auto grid gap-10 px-4 py-14 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:py-20">
         <div>
-            <p class="mb-4 inline-flex items-center gap-2 rounded-full bg-dinor-red/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-dinor-red">
-                <span class="h-1.5 w-1.5 rounded-full bg-dinor-red"></span>
-                Concours photo en cours
+            <p class="mb-4 inline-flex items-center gap-2 rounded-full {{ $contestEnded ? 'bg-gray-100 text-gray-600' : 'bg-dinor-red/10 text-dinor-red' }} px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+                <span class="h-1.5 w-1.5 rounded-full {{ $contestEnded ? 'bg-gray-500' : 'bg-dinor-red' }}"></span>
+                {{ $contestEnded ? 'Concours terminé' : 'Concours photo en cours' }}
             </p>
             <h1 class="font-display text-4xl font-bold leading-[1.05] text-dinor-dark md:text-6xl">
                 Un moment de<br />
                 <span class="text-dinor-red">cuisine</span> avec maman
             </h1>
             <p class="mt-6 max-w-xl text-lg leading-8 text-gray-600">
-                Partagez votre plus beau moment en cuisine, invitez vos proches à voter
-                et célébrez les recettes qui ont bercé votre famille.
+                @if($contestEnded)
+                    Le concours est terminé — découvrez le palmarès des familles qui ont marqué cette édition.
+                @else
+                    Partagez votre plus beau moment en cuisine, invitez vos proches à voter
+                    et célébrez les recettes qui ont bercé votre famille.
+                @endif
             </p>
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a href="{{ route('contest.form') }}" class="btn-dinor">Je participe</a>
-                <a href="{{ route('contest.gallery') }}" class="btn-ghost">Voir la galerie</a>
+                @if($contestEnded)
+                    <a href="{{ route('winners.index') }}" class="btn-dinor">Voir les gagnants</a>
+                    <a href="{{ route('contest.gallery') }}" class="btn-ghost">Revoir la galerie</a>
+                @elseif($uploadPhase)
+                    <a href="{{ route('contest.form') }}" class="btn-dinor">Je participe</a>
+                    <a href="{{ route('contest.gallery') }}" class="btn-ghost">Voir la galerie</a>
+                @else
+                    <a href="{{ route('contest.gallery') }}" class="btn-dinor">Voter pour ma favorite</a>
+                    <a href="{{ route('participant.login') }}" class="btn-ghost">Accéder à mon espace</a>
+                @endif
             </div>
 
-            <div x-data="countdown('{{ $contestEndsAt }}')" class="mt-5 inline-flex items-center gap-2 rounded-xl border border-dinor-gold/30 bg-dinor-gold/10 px-4 py-2 text-sm text-dinor-dark">
-                <span class="font-semibold">Fin du concours dans:</span>
-                <span class="font-bold" x-text="label"></span>
-            </div>
+            @if($contestEnded)
+                <div class="mt-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-600">
+                    <span class="font-semibold">Statut:</span>
+                    <span class="font-bold text-dinor-dark">Terminé le {{ \Illuminate\Support\Carbon::parse($contestEndsAt)->isoFormat('D MMM Y') }}</span>
+                </div>
+            @else
+                <div x-data="countdown('{{ $contestEndsAt }}')" class="mt-5 inline-flex items-center gap-2 rounded-xl border border-dinor-gold/30 bg-dinor-gold/10 px-4 py-2 text-sm text-dinor-dark">
+                    <span class="font-semibold">Fin du concours dans:</span>
+                    <span class="font-bold" x-text="label"></span>
+                </div>
+            @endif
 
             <dl class="mt-10 flex flex-wrap gap-x-10 gap-y-4 text-sm">
                 <div>

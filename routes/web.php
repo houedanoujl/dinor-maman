@@ -2,9 +2,11 @@
 
 use App\Livewire\ContestForm;
 use App\Livewire\GalleryView;
+use App\Livewire\ParticipantLogin;
 use App\Models\Participant;
 use App\Models\ShareVisit;
 use App\Models\Winner;
+use App\Support\ContestSettings;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,14 +29,16 @@ Route::get('/', function () {
         'collage' => $collage,
         'approvedCount' => (clone $approved)->count(),
         'totalVotes' => (clone $approved)->sum('vote_count'),
-        'contestEndsAt' => config('contest.ends_at'),
-        'contestEnded' => now()->greaterThan(config('contest.ends_at')),
     ]);
 })->name('home');
 
 Route::get('/participer', ContestForm::class)
     ->middleware('throttle:30,1')
     ->name('contest.form');
+
+Route::get('/connexion', ParticipantLogin::class)
+    ->middleware('throttle:30,1')
+    ->name('participant.login');
 
 Route::get('/reglement', fn () => view('reglement'))
     ->name('reglement');
@@ -155,7 +159,14 @@ Route::post('/deconnexion', function () {
 })->name('participant.logout');
 
 Route::get('/gagnants', function () {
-    $cycle = now()->format('Y-m');
+    $endsAt = ContestSettings::endsAt();
+    $cycle = $endsAt->format('Y-m');
+
+    // Si le concours est termin\u00e9 et que les gagnants ne sont pas encore fig\u00e9s,
+    // on lance la commande d'annonce automatiquement (filet de s\u00e9curit\u00e9 si scheduler absent).
+    if (now()->greaterThan($endsAt) && ! Winner::where('contest_cycle', $cycle)->exists()) {
+        \Illuminate\Support\Facades\Artisan::call('contest:announce-winners');
+    }
 
     $winners = Winner::query()
         ->with('participant')

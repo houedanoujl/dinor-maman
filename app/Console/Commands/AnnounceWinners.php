@@ -23,7 +23,8 @@ class AnnounceWinners extends Command
             return self::FAILURE;
         }
 
-        $cycle = now()->format('Y-m');
+        // Cycle basé sur le mois de fin du concours (et non le mois courant)
+        $cycle = ContestSettings::endsAt()->format('Y-m');
         if (Winner::where('contest_cycle', $cycle)->exists()) {
             $this->info('Winners already announced for this cycle.');
             return self::SUCCESS;

@@ -30,6 +30,9 @@ class ContestSettingsPage extends Page
     {
         $this->form->fill([
             'ends_at' => ContestSettings::endsAt(),
+            'upload_ends_at' => ContestSettings::uploadEndsAt()->equalTo(ContestSettings::endsAt())
+                ? null
+                : ContestSettings::uploadEndsAt(),
         ]);
     }
 
@@ -46,6 +49,17 @@ class ContestSettingsPage extends Page
                             ->required()
                             ->native(false)
                             ->displayFormat('d/m/Y H:i'),
+                    ]),
+                Section::make("Phase d'upload")
+                    ->description("Optionnel. Jusqu'à cette date les participants peuvent soumettre et modifier leur photo. Après : phase de vote uniquement (modifications bloquées), votes ouverts jusqu'à la fin du concours. Laissez vide pour autoriser les uploads jusqu'à la fin.")
+                    ->schema([
+                        Forms\Components\DateTimePicker::make('upload_ends_at')
+                            ->label("Fin de la phase d'upload")
+                            ->seconds(false)
+                            ->native(false)
+                            ->displayFormat('d/m/Y H:i')
+                            ->before('ends_at')
+                            ->helperText("Doit être antérieure à la fin du concours."),
                     ]),
             ])
             ->statePath('data');
@@ -65,6 +79,7 @@ class ContestSettingsPage extends Page
         $state = $this->form->getState();
 
         ContestSettings::setEndsAt($state['ends_at']);
+        ContestSettings::setUploadEndsAt($state['upload_ends_at'] ?? null);
 
         Notification::make()
             ->success()

@@ -25,10 +25,21 @@
                           @if(request()->routeIs('contest.gallery')) border-b-2 border-dinor-red @endif">
                     Galerie
                 </a>
-                @if(! session('participant_token'))
-                    <a href="{{ route('contest.form') }}"
-                       class="inline-flex items-center justify-center rounded-full bg-dinor-red px-5 py-2 font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">
-                        Participer
+                @if($contestEnded)
+                    <a href="{{ route('winners.index') }}"
+                       class="inline-flex items-center justify-center rounded-full bg-dinor-gold px-5 py-2 font-semibold text-white shadow-sm transition hover:bg-dinor-gold/90">
+                        Gagnants
+                    </a>
+                @elseif(! session('participant_token'))
+                    @if($uploadPhase)
+                        <a href="{{ route('contest.form') }}"
+                           class="inline-flex items-center justify-center rounded-full bg-dinor-red px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">
+                            Participer
+                        </a>
+                    @endif
+                    <a href="{{ route('participant.login') }}"
+                       class="inline-flex items-center justify-center rounded-full border border-dinor-red px-4 py-2 font-semibold text-dinor-red transition hover:bg-dinor-red hover:text-white">
+                        Se connecter
                     </a>
                 @endif
                 <x-user-menu />
@@ -37,6 +48,20 @@
     </header>
 
     <main>
+        @if($votePhase && $hasSeparateVotePhase)
+            <div class="bg-amber-50 border-b border-amber-200">
+                <div class="container mx-auto px-4 py-2 text-center text-xs font-semibold text-amber-800">
+                    Phase de vote en cours — les nouvelles inscriptions et modifications de photos sont clôturées. Continuez à voter jusqu'au {{ \Illuminate\Support\Carbon::parse($contestEndsAt)->isoFormat('D MMM à HH[h]mm') }}.
+                </div>
+            </div>
+        @endif
+        @if(session('status'))
+            <div class="container mx-auto px-4 pt-4">
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    {{ session('status') }}
+                </div>
+            </div>
+        @endif
         {{ $slot ?? '' }}
         @yield('content')
     </main>

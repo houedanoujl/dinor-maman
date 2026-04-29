@@ -33,7 +33,7 @@
             <p class="mt-2 text-gray-600">Une photo, vos coordonnees, et c'est parti.</p>
         </div>
 
-        @if (now()->greaterThan(config('contest.ends_at')))
+        @if ($contestEnded)
             <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                 Le concours est termine. Les nouvelles participations sont cloturees.
             </div>
@@ -118,7 +118,7 @@
                 @error('consent') <p class="mt-2 text-sm text-red-600">Vous devez accepter le reglement pour participer.</p> @enderror
             </div>
 
-            <button type="submit" class="btn-dinor w-full py-3 text-base disabled:opacity-50" wire:loading.attr="disabled" @if(now()->greaterThan(config('contest.ends_at'))) disabled @endif>
+            <button type="submit" class="btn-dinor w-full py-3 text-base disabled:opacity-50" wire:loading.attr="disabled" @if($contestEnded) disabled @endif>
                 <span wire:loading.remove wire:target="submit">Envoyer ma participation</span>
                 <span wire:loading wire:target="submit">Envoi en cours...</span>
             </button>

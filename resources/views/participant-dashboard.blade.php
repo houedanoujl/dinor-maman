@@ -45,6 +45,17 @@
             @if($participant->status === \App\Models\Participant::STATUS_REJECTED && $participant->rejection_reason)
                 <p class="mt-2 text-sm text-red-600">Motif : {{ $participant->rejection_reason }}</p>
             @endif
+
+            {{-- Modification de la photo (uniquement pendant la phase d'upload) --}}
+            @if($uploadPhase)
+                <div class="mt-4 flex justify-center sm:justify-start">
+                    <livewire:photo-replace :participant="$participant" :key="'photo-replace-'.$participant->id" />
+                </div>
+            @elseif($votePhase && $hasSeparateVotePhase)
+                <p class="mt-3 text-xs text-amber-700">
+                    La phase de vote a commencé : la photo ne peut plus être modifiée.
+                </p>
+            @endif
         </div>
     </div>
 
