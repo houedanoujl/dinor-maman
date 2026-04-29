@@ -1,0 +1,34 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../../app/Livewire/**/*.php';
+@source '../../app/Filament/**/*.php';
+
+@theme {
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-dinor-red:    #D61B23;
+    --color-dinor-gold:   #A98539;
+    --color-dinor-cream:  #FFF8F0;
+    --color-dinor-dark:   #1A1A1A;
+
+    --shadow-dinor: 0 8px 24px rgba(214, 27, 35, 0.15);
+}
+
+@layer components {
+    .input-dinor {
+        @apply w-full rounded-xl border border-gray-300 px-4 py-2.5
+               focus:border-dinor-red focus:ring focus:ring-dinor-red/30
+               focus:outline-none transition;
+    }
+
+    .btn-dinor {
+        @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl
+               bg-dinor-red text-white font-semibold hover:bg-dinor-red/90
+               shadow-dinor transition;
+    }
+}
