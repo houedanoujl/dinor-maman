@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -28,7 +29,17 @@ class Participant extends Model implements HasMedia
         'email',
         'approved_at',
         'rejection_reason',
+        'dashboard_token',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $participant) {
+            if (empty($participant->dashboard_token)) {
+                $participant->dashboard_token = Str::random(40);
+            }
+        });
+    }
 
     protected $casts = [
         'approved_at' => 'datetime',
@@ -69,5 +80,12 @@ class Participant extends Model implements HasMedia
     public function getFullNameAttribute(): string
     {
         return trim("{$this->first_name} {$this->last_name}");
+    }
+
+    public function getDashboardUrlAttribute(): ?string
+    {
+        return $this->dashboard_token
+            ? route('participant.dashboard', $this->dashboard_token)
+            : null;
     }
 }

@@ -95,6 +95,57 @@ Route::get('/profil/{participant}', function (Participant $participant) {
     ]);
 })->middleware('throttle:120,1')->name('participant.show');
 
+Route::get('/mon-espace/{token}', function (string $token) {
+    $participant = Participant::where('dashboard_token', $token)->firstOrFail();
+
+    // Classement (uniquement si approuvé)
+    $rank = null;
+    $totalApproved = Participant::approved()->count();
+    if ($participant->status === Participant::STATUS_APPROVED) {
+        $rank = Participant::approved()
+            ->where(function ($q) use ($participant) {
+                $q->where('vote_count', '>', $participant->vote_count)
+                  ->orWhere(function ($q2) use ($participant) {
+                      $q2->where('vote_count', $participant->vote_count)
+                         ->where('approved_at', '<', $participant->approved_at);
+                  });
+            })->count() + 1;
+    }
+
+    // Histogramme: votes par jour sur les 14 derniers jours
+    $start = now()->subDays(13)->startOfDay();
+    $rawCounts = $participant->votes()
+        ->where('created_at', '>=', $start)
+        ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+        ->groupBy('day')
+        ->pluck('total', 'day');
+
+    $dailyVotes = collect();
+    for ($i = 0; $i < 14; $i++) {
+        $date = $start->copy()->addDays($i);
+        $key = $date->format('Y-m-d');
+        $dailyVotes->push([
+            'date' => $date,
+            'label' => $date->isoFormat('dd D/M'),
+            'count' => (int) ($rawCounts[$key] ?? 0),
+        ]);
+    }
+
+    return view('participant-dashboard', [
+        'participant' => $participant,
+        'rank' => $rank,
+        'totalApproved' => $totalApproved,
+        'dailyVotes' => $dailyVotes,
+        'maxDaily' => max(1, $dailyVotes->max('count')),
+        'todayVotes' => (int) ($rawCounts[now()->format('Y-m-d')] ?? 0),
+        'last7Total' => (int) $participant->votes()->where('created_at', '>=', now()->subDays(7))->count(),
+        'shareUrl' => $participant->status === Participant::STATUS_APPROVED
+            ? route('participant.show', $participant) . '?ref=' . $participant->id
+            : null,
+        'title' => 'Mon espace — ' . $participant->full_name,
+    ]);
+})->middleware('throttle:60,1')->name('participant.dashboard');
+
 Route::get('/gagnants', function () {
     $cycle = now()->format('Y-m');
 
