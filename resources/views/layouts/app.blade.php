@@ -15,11 +15,25 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="min-h-full font-sans text-dinor-dark antialiased">
+<body class="min-h-full pb-24 font-sans text-dinor-dark antialiased md:pb-0">
+    @php
+        $participantToken = session('participant_token');
+        $currentParticipant = null;
+
+        if ($participantToken) {
+            $currentParticipant = \App\Models\Participant::where('dashboard_token', $participantToken)->first();
+
+            if (! $currentParticipant) {
+                session()->forget('participant_token');
+                $participantToken = null;
+            }
+        }
+    @endphp
+
     <header class="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur">
         <div class="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
             <x-dinor-logo />
-            <nav class="flex items-center gap-1 text-sm font-medium sm:gap-3">
+            <nav class="hidden items-center gap-1 text-sm font-medium md:flex sm:gap-3">
                 <a href="{{ route('contest.gallery') }}"
                    class="px-3 py-2 font-semibold text-dinor-red transition hover:text-dinor-red
                           @if(request()->routeIs('contest.gallery')) border-b-2 border-dinor-red @endif">
@@ -83,7 +97,85 @@
         </div>
     </footer>
 
-    <div x-data="toastBus()" x-on:toast.window="push($event.detail)" class="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[92vw] max-w-sm flex-col gap-2">
+    <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur md:hidden" aria-label="Navigation mobile">
+        <div class="mx-auto grid max-w-md grid-cols-3 gap-1">
+            <a href="{{ route('contest.gallery') }}"
+               class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition {{ request()->routeIs('contest.gallery') ? 'bg-dinor-red/10 text-dinor-red' : 'text-gray-500 hover:bg-dinor-cream hover:text-dinor-red' }}"
+               @if(request()->routeIs('contest.gallery')) aria-current="page" @endif>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 5h16v14H4z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 15l4.5-4.5 3 3L14 11l6 6" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5h.01" />
+                </svg>
+                <span>Galerie</span>
+            </a>
+
+            @if($contestEnded)
+                <a href="{{ route('winners.index') }}"
+                   class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition {{ request()->routeIs('winners.index') ? 'bg-dinor-red/10 text-dinor-red' : 'text-gray-500 hover:bg-dinor-cream hover:text-dinor-red' }}"
+                   @if(request()->routeIs('winners.index')) aria-current="page" @endif>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 17v4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 4h10v4a5 5 0 0 1-10 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 5H3v2a3 3 0 0 0 4 2.83" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 5h2v2a3 3 0 0 1-4 2.83" />
+                    </svg>
+                    <span>Gagnants</span>
+                </a>
+            @elseif($uploadPhase)
+                <a href="{{ route('contest.form') }}"
+                   class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition {{ request()->routeIs('contest.form') ? 'bg-dinor-red/10 text-dinor-red' : 'text-gray-500 hover:bg-dinor-cream hover:text-dinor-red' }}"
+                   @if(request()->routeIs('contest.form')) aria-current="page" @endif>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+                    </svg>
+                    <span>Participer</span>
+                </a>
+            @else
+                <a href="{{ route('home') }}"
+                   class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition {{ request()->routeIs('home') ? 'bg-dinor-red/10 text-dinor-red' : 'text-gray-500 hover:bg-dinor-cream hover:text-dinor-red' }}"
+                   @if(request()->routeIs('home')) aria-current="page" @endif>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-8 9 8" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 10v10h14V10" />
+                    </svg>
+                    <span>Accueil</span>
+                </a>
+            @endif
+
+            @if($currentParticipant)
+                <a href="{{ $currentParticipant->dashboard_url }}"
+                   class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition {{ request()->routeIs('participant.dashboard') ? 'bg-dinor-red/10 text-dinor-red' : 'text-gray-500 hover:bg-dinor-cream hover:text-dinor-red' }}"
+                   @if(request()->routeIs('participant.dashboard')) aria-current="page" @endif>
+                    @php($avatar = $currentParticipant->getFirstMediaUrl('photo', 'thumb'))
+                    @if($avatar)
+                        <img src="{{ $avatar }}" alt="" class="h-5 w-5 rounded-full object-cover" />
+                    @else
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 21a8 8 0 0 1 16 0" />
+                        </svg>
+                    @endif
+                    <span>Mon espace</span>
+                </a>
+            @else
+                <a href="{{ route('participant.login') }}"
+                   class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition {{ request()->routeIs('participant.login') ? 'bg-dinor-red/10 text-dinor-red' : 'text-gray-500 hover:bg-dinor-cream hover:text-dinor-red' }}"
+                   @if(request()->routeIs('participant.login')) aria-current="page" @endif>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 17l5-5-5-5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H3" />
+                    </svg>
+                    <span>Connexion</span>
+                </a>
+            @endif
+        </div>
+    </nav>
+
+    <div x-data="toastBus()" x-on:toast.window="push($event.detail)" class="pointer-events-none fixed bottom-28 right-4 z-50 flex w-[92vw] max-w-sm flex-col gap-2 md:bottom-4">
         <template x-for="item in items" :key="item.id">
             <div class="pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-lg"
                  :class="item.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : (item.type === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-red-200 bg-red-50 text-red-800')">
