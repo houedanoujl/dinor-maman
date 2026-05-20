@@ -26,8 +26,17 @@ class PhotoReplace extends Component
         $this->participant = $participant;
     }
 
+    protected function authorizeOwner(): void
+    {
+        $token = session('participant_token');
+        if (! $token || $token !== $this->participant->dashboard_token) {
+            abort(403);
+        }
+    }
+
     public function startEdit(): void
     {
+        $this->authorizeOwner();
         $this->editing = true;
     }
 
@@ -40,6 +49,8 @@ class PhotoReplace extends Component
 
     public function save(): void
     {
+        $this->authorizeOwner();
+
         if (! ContestSettings::isUploadPhase()) {
             throw ValidationException::withMessages([
                 'photo' => "La phase d'upload est terminée. La modification de photo n'est plus possible.",

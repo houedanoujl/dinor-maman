@@ -35,6 +35,16 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'sid'   => env('TWILIO_ACCOUNT_SID'),
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'from'  => env('TWILIO_FROM'),
+    ],
+
+    'google' => [
+        'analytics_id' => env('GOOGLE_ANALYTICS_ID'),
+    ],
+
     'sms' => [
         'provider' => env('SMS_PROVIDER', 'log'),
         'from' => env('SMS_FROM'),

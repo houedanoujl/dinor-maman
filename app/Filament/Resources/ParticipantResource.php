@@ -57,6 +57,12 @@ class ParticipantResource extends Resource
                             'rejected' => 'Rejeté',
                         ])
                         ->required(),
+                    Forms\Components\Textarea::make('anecdote')
+                        ->label('Anecdote / Message')
+                        ->rows(3)
+                        ->maxLength(500)
+                        ->placeholder('Message laissé par le participant…')
+                        ->columnSpanFull(),
                     Forms\Components\Textarea::make('rejection_reason')
                         ->label('Motif de rejet')
                         ->rows(3)
@@ -71,10 +77,17 @@ class ParticipantResource extends Resource
         ]);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['media', 'user']);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->defaultSort('vote_count', 'desc')
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
             ->columns([
                 Tables\Columns\SpatieMediaLibraryImageColumn::make('photo')
                     ->collection('photo')
@@ -91,6 +104,11 @@ class ParticipantResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Téléphone')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('anecdote')
+                    ->label('Anecdote')
+                    ->limit(60)
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('vote_count')
                     ->label('Votes')
                     ->sortable()

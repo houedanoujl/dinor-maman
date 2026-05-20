@@ -44,3 +44,6 @@
         font-feature-settings: "lnum";
     }
 }
+.bg-dinor-dark {
+    background-color: black !important;
+}

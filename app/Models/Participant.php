@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
@@ -20,16 +21,21 @@ class Participant extends Model implements HasMedia
     public const STATUS_REJECTED = 'rejected';
 
     protected $fillable = [
+        'user_id',
         'first_name',
         'last_name',
         'phone',
         'city',
         'photo_path',
+        'anecdote',
         'status',
         'email',
         'approved_at',
         'rejection_reason',
         'dashboard_token',
+        'sms_code',
+        'sms_code_expires_at',
+        'phone_verified_at',
     ];
 
     protected static function booted(): void
@@ -42,13 +48,20 @@ class Participant extends Model implements HasMedia
     }
 
     protected $casts = [
-        'approved_at' => 'datetime',
-        'vote_count' => 'integer',
+        'approved_at'          => 'datetime',
+        'sms_code_expires_at'  => 'datetime',
+        'phone_verified_at'    => 'datetime',
+        'vote_count'           => 'integer',
     ];
 
     public function votes(): HasMany
     {
         return $this->hasMany(Vote::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function registerMediaCollections(): void

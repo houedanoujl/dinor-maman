@@ -55,116 +55,84 @@
         @endforeach
     </div>
 
-    {{-- Carousel de cards --}}
+    {{-- Grille style Instagram --}}
     @if ($participants->count())
-        <div
-            x-data="{
-                scroll(direction) {
-                    const track = this.$refs.track;
+        <div class="mb-4 flex items-center justify-between gap-3">
+            <p class="text-sm font-semibold text-gray-500">
+                {{ $participants->firstItem() }}-{{ $participants->lastItem() }} sur {{ $participants->total() }}
+            </p>
+        </div>
 
-                    track.scrollBy({
-                        left: direction * Math.max(track.clientWidth * 0.88, 280),
-                        behavior: 'smooth'
-                    });
-                }
-            }"
-            class="relative"
-        >
-            <div class="mb-3 flex items-center justify-between gap-3">
-                <p class="text-sm font-semibold text-gray-500">
-                    {{ $participants->firstItem() }}-{{ $participants->lastItem() }} sur {{ $participants->total() }}
-                </p>
-                <div class="flex items-center gap-2">
-                    <button type="button"
-                            x-on:click="scroll(-1)"
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-dinor-dark shadow-sm transition hover:border-dinor-red hover:text-dinor-red"
-                            aria-label="Précédent">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-                    <button type="button"
-                            x-on:click="scroll(1)"
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-dinor-dark shadow-sm transition hover:border-dinor-red hover:text-dinor-red"
-                            aria-label="Suivant">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
+        <div class="grid grid-cols-2 gap-1 sm:gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            @foreach ($participants as $i => $p)
+                @php
+                    $initials = strtoupper(substr($p->first_name, 0, 1) . substr($p->last_name, 0, 1));
+                    $img = $p->getFirstMediaUrl('photo', 'card');
+                    $hasVoted = isset($votedIds[$p->id]);
+                    $globalRank = $participants->firstItem() + $i;
+                @endphp
 
-            <div x-ref="track"
-                 class="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                @foreach ($participants as $i => $p)
-                    @php
-                        $initials = strtoupper(substr($p->first_name, 0, 1) . substr($p->last_name, 0, 1));
-                        $img = $p->getFirstMediaUrl('photo', 'card');
-                        $hasVoted = isset($votedIds[$p->id]);
-                    @endphp
-                    <article wire:key="gallery-carousel-{{ $p->id }}"
-                             class="flex min-w-0 shrink-0 basis-[86%] snap-center overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-dinor sm:basis-[48%] lg:basis-[32%] xl:basis-[24%]">
-                        <div class="flex w-full flex-col">
-                            <a href="{{ route('participant.show', $p) }}" class="relative block aspect-4/5 w-full overflow-hidden bg-linear-to-br from-dinor-red to-dinor-gold">
-                                @if ($img)
-                                    <img src="{{ $img }}" alt="{{ $p->full_name }}"
-                                         loading="lazy"
-                                         class="h-full w-full object-cover transition duration-500 hover:scale-105" />
-                                @else
-                                    <div class="flex h-full w-full items-center justify-center text-5xl font-extrabold text-white">
-                                        {{ $initials }}
-                                    </div>
-                                @endif
+                <article wire:key="gallery-grid-{{ $p->id }}"
+                         class="group relative aspect-square overflow-hidden bg-gray-100 sm:rounded-lg">
 
-                                @if ($sort === 'popular')
-                                    <span class="absolute right-3 top-3 inline-flex items-center rounded-md bg-dinor-red px-2.5 py-1 text-xs font-bold text-white shadow">
-                                        #{{ $participants->firstItem() + $i }}
-                                    </span>
-                                @else
-                                    <span class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-md bg-dinor-red text-xs font-bold uppercase text-white shadow">
-                                        {{ $initials }}
-                                    </span>
-                                @endif
-                            </a>
+                    {{-- Badge classement (top 3 seulement) --}}
+                    @if ($sort === 'popular' && $globalRank <= 3)
+                        <span class="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full {{ $globalRank === 1 ? 'bg-dinor-gold' : ($globalRank === 2 ? 'bg-gray-300' : 'bg-amber-700') }} text-xs font-bold text-white shadow-md">
+                            {{ $globalRank }}
+                        </span>
+                    @endif
 
-                            <div class="flex flex-1 flex-col px-4 pb-4 pt-3">
-                                <a href="{{ route('participant.show', $p) }}"
-                                   class="block truncate text-base font-semibold text-dinor-dark transition hover:text-dinor-red">
-                                    {{ $p->full_name }}
-                                </a>
-                                <p class="truncate text-sm text-gray-500">{{ $p->city }}</p>
+                    <a href="{{ route('participant.show', $p) }}" class="block h-full w-full">
+                        @if ($img)
+                            <img src="{{ $img }}" alt="{{ $p->full_name }}"
+                                 loading="lazy"
+                                 class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                        @else
+                            <div class="flex h-full w-full items-center justify-center bg-linear-to-br from-dinor-red to-dinor-gold text-4xl font-extrabold text-white">
+                                {{ $initials }}
+                            </div>
+                        @endif
+                    </a>
 
-                                <div class="mt-3 flex items-center justify-between gap-3">
-                                    <button wire:click="vote({{ $p->id }})"
-                                            @if($hasVoted || $contestEnded) disabled @endif
-                                            type="button"
-                                            class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition disabled:cursor-default
-                                                   {{ $hasVoted
-                                                       ? 'border-dinor-red bg-dinor-red/5 text-dinor-red font-semibold'
-                                                       : ($contestEnded
-                                                            ? 'border-gray-200 bg-gray-100 text-gray-400'
-                                                            : 'border-gray-200 bg-white text-gray-600 hover:border-dinor-red hover:text-dinor-red') }}">
-                                        <svg class="h-4 w-4 {{ $hasVoted ? 'fill-dinor-red' : 'fill-none' }}"
-                                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
-                                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                        </svg>
-                                        <span class="font-semibold tabular-nums">{{ $p->vote_count }}</span>
-                                    </button>
-
-                                    <a href="{{ route('participant.show', $p) }}"
-                                       class="inline-flex items-center gap-1 text-sm font-semibold text-dinor-red transition hover:underline">
-                                        Voir
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                </div>
+                    {{-- Overlay permanent : dégradé sous infos --}}
+                    <div class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col justify-end bg-linear-to-t from-black/90 via-black/60 to-transparent pt-8">
+                        <div class="pointer-events-auto px-3 pb-3 text-white">
+                            <p class="truncate text-sm font-bold drop-shadow">{{ $p->full_name }}</p>
+                            <p class="truncate text-xs text-white/80">{{ $p->city }}</p>
+                            <div class="mt-2 flex items-center justify-between">
+                                <span class="inline-flex items-center gap-1 text-sm font-semibold">
+                                    <svg class="h-4 w-4 {{ $hasVoted ? 'fill-dinor-red text-dinor-red' : 'fill-white text-white' }}"
+                                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                    </svg>
+                                    {{ $p->vote_count }}
+                                </span>
+                                <button wire:click="vote({{ $p->id }})"
+                                        @if($hasVoted || $contestEnded) disabled @endif
+                                        type="button"
+                                        class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold shadow-md transition
+                                               {{ $hasVoted
+                                                   ? 'bg-dinor-red text-white'
+                                                   : ($contestEnded
+                                                        ? 'bg-white/20 text-white/50'
+                                                        : 'bg-white text-dinor-dark hover:bg-dinor-red hover:text-white') }}">
+                                    {{ $hasVoted ? 'Voté' : 'Voter' }}
+                                </button>
                             </div>
                         </div>
-                    </article>
-                @endforeach
-            </div>
+                    </div>
+
+                    {{-- Indicateur "voté" toujours visible --}}
+                    @if ($hasVoted)
+                        <span class="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-dinor-red text-white shadow-md">
+                            <svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                            </svg>
+                        </span>
+                    @endif
+                </article>
+            @endforeach
         </div>
     @else
         <p class="py-16 text-center text-gray-500">Aucune participation trouvée.</p>

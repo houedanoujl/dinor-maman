@@ -26,7 +26,7 @@
         @yield('content')
     </main>
 
-    <footer class="mt-16 border-t border-gray-100 bg-white py-8">
+    <footer class="background-dark mt-16 border-t border-gray-100 py-8">
         <div class="container mx-auto flex flex-col items-center gap-3 px-4 text-center text-sm text-gray-500 sm:flex-row sm:justify-between sm:text-left">
             <span class="inline-flex items-center gap-2">
                 <svg viewBox="0 0 24 24" class="h-4 w-4 text-dinor-gold" fill="currentColor" aria-hidden="true">

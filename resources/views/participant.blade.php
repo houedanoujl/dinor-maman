@@ -32,6 +32,12 @@
             </h1>
             <p class="mt-1 text-lg text-gray-600">{{ $participant->city }}</p>
 
+            @if ($participant->anecdote)
+                <blockquote class="mt-4 rounded-2xl border border-dinor-gold/30 bg-dinor-gold/5 px-5 py-4 text-sm italic text-gray-700">
+                    "{{ $participant->anecdote }}"
+                </blockquote>
+            @endif
+
             <div class="mt-6 flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <div class="flex-1">
                     <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Votes reçus</p>
@@ -47,7 +53,8 @@
 
             <div class="mt-6 flex flex-wrap gap-2">
                 <button type="button"
-                        onclick="navigator.clipboard?.writeText('{{ $shareUrl }}'); this.innerText='Lien copié ✓'"
+                        data-share-url="{{ $shareUrl }}"
+                        onclick="navigator.clipboard?.writeText(this.dataset.shareUrl); this.innerText='Lien copié ✓'"
                         class="btn-ghost text-sm">
                     Copier mon lien de partage
                 </button>

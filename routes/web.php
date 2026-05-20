@@ -1,5 +1,7 @@
 <?php
 
+use App\Livewire\Auth\Login;
+use App\Livewire\Auth\Register;
 use App\Livewire\ContestForm;
 use App\Livewire\GalleryView;
 use App\Livewire\ParticipantLogin;
@@ -7,6 +9,7 @@ use App\Models\Participant;
 use App\Models\ShareVisit;
 use App\Models\Winner;
 use App\Support\ContestSettings;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -32,6 +35,21 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/inscription', Register::class)
+    ->middleware(['guest', 'throttle:30,1'])
+    ->name('register');
+
+Route::get('/login', Login::class)
+    ->middleware(['guest', 'throttle:30,1'])
+    ->name('login');
+
+Route::post('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect()->route('home')->with('status', 'Déconnecté.');
+})->middleware('auth')->name('logout');
+
 Route::get('/participer', ContestForm::class)
     ->middleware('throttle:30,1')
     ->name('contest.form');
@@ -42,6 +60,16 @@ Route::get('/connexion', ParticipantLogin::class)
 
 Route::get('/reglement', fn () => view('reglement'))
     ->name('reglement');
+
+Route::get('/faq', function () {
+    $faq = ContestSettings::getFaq();
+    return view('faq', ['faqItems' => $faq]);
+})->name('faq');
+
+Route::get('/cgu', function () {
+    $cgu = ContestSettings::getCgu();
+    return view('cgu', ['content' => $cgu]);
+})->name('cgu');
 
 Route::get('/galerie', GalleryView::class)
     ->middleware('throttle:120,1')
@@ -151,7 +179,7 @@ Route::get('/mon-espace/{token}', function (string $token) {
             : null,
         'title' => 'Mon espace — ' . $participant->full_name,
     ]);
-})->middleware('throttle:60,1')->name('participant.dashboard');
+})->middleware('throttle:30,1')->name('participant.dashboard');
 
 Route::post('/deconnexion', function () {
     session()->forget('participant_token');

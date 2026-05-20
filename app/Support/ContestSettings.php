@@ -10,12 +10,18 @@ class ContestSettings
 {
     private const KEY = 'contest.ends_at';
     private const KEY_UPLOAD_ENDS = 'contest.upload_ends_at';
+    private const KEY_REGLEMENT = 'contest.reglement';
+    private const KEY_FAQ = 'contest.faq';
+    private const KEY_CGU = 'contest.cgu';
     private const CACHE_KEY = 'contest_ends_at';
     private const CACHE_KEY_UPLOAD_ENDS = 'contest_upload_ends_at';
+    private const CACHE_KEY_REGLEMENT = 'contest_reglement';
+    private const CACHE_KEY_FAQ = 'contest_faq';
+    private const CACHE_KEY_CGU = 'contest_cgu';
 
     public static function endsAt(): Carbon
     {
-        $value = Cache::rememberForever(self::CACHE_KEY, function () {
+        $value = Cache::remember(self::CACHE_KEY, 3600, function () {
             try {
                 $row = DB::table('settings')->where('key', self::KEY)->value('value');
             } catch (\Throwable $e) {
@@ -48,7 +54,7 @@ class ContestSettings
      */
     public static function uploadEndsAt(): Carbon
     {
-        $value = Cache::rememberForever(self::CACHE_KEY_UPLOAD_ENDS, function () {
+        $value = Cache::remember(self::CACHE_KEY_UPLOAD_ENDS, 3600, function () {
             try {
                 $row = DB::table('settings')->where('key', self::KEY_UPLOAD_ENDS)->value('value');
             } catch (\Throwable $e) {
@@ -95,5 +101,76 @@ class ContestSettings
     public static function isEnded(): bool
     {
         return now()->greaterThan(self::endsAt());
+    }
+
+    public static function getReglement(): ?string
+    {
+        return Cache::remember(self::CACHE_KEY_REGLEMENT, 3600, function () {
+            try {
+                return DB::table('settings')->where('key', self::KEY_REGLEMENT)->value('value');
+            } catch (\Throwable $e) {
+                return null;
+            }
+        });
+    }
+
+    public static function setReglement(string $html): void
+    {
+        DB::table('settings')->updateOrInsert(
+            ['key' => self::KEY_REGLEMENT],
+            ['value' => $html, 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        Cache::forget(self::CACHE_KEY_REGLEMENT);
+    }
+
+    /** FAQ : tableau de {q, a} stocké en JSON. */
+    public static function getFaq(): array
+    {
+        $raw = Cache::remember(self::CACHE_KEY_FAQ, 3600, function () {
+            try {
+                return DB::table('settings')->where('key', self::KEY_FAQ)->value('value');
+            } catch (\Throwable $e) {
+                return null;
+            }
+        });
+
+        if ($raw) {
+            $decoded = json_decode($raw, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
+    public static function setFaq(array $items): void
+    {
+        DB::table('settings')->updateOrInsert(
+            ['key' => self::KEY_FAQ],
+            ['value' => json_encode($items, JSON_UNESCAPED_UNICODE), 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        Cache::forget(self::CACHE_KEY_FAQ);
+    }
+
+    public static function getCgu(): ?string
+    {
+        return Cache::remember(self::CACHE_KEY_CGU, 3600, function () {
+            try {
+                return DB::table('settings')->where('key', self::KEY_CGU)->value('value');
+            } catch (\Throwable $e) {
+                return null;
+            }
+        });
+    }
+
+    public static function setCgu(string $html): void
+    {
+        DB::table('settings')->updateOrInsert(
+            ['key' => self::KEY_CGU],
+            ['value' => $html, 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        Cache::forget(self::CACHE_KEY_CGU);
     }
 }
