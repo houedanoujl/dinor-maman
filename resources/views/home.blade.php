@@ -25,7 +25,7 @@
                     <a href="{{ route('winners.index') }}" class="btn-dinor">Voir les gagnants</a>
                     <a href="{{ route('contest.gallery') }}" class="btn-ghost">Revoir la galerie</a>
                 @elseif($uploadPhase)
-                    <a href="{{ route('contest.form') }}" class="btn-dinor">Je participe</a>
+                    <a href="{{ route('register', ['role' => 'participant']) }}" class="btn-dinor">Je participe</a>
                     <a href="{{ route('contest.gallery') }}" class="btn-ghost">Voir la galerie</a>
                 @else
                     <a href="{{ route('contest.gallery') }}" class="btn-dinor">Voter pour ma favorite</a>

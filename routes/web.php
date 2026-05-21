@@ -2,7 +2,6 @@
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
-use App\Livewire\ContestForm;
 use App\Livewire\GalleryView;
 use App\Livewire\ParticipantLogin;
 use App\Models\Participant;
@@ -36,7 +35,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/inscription', Register::class)
-    ->middleware(['guest', 'throttle:30,1'])
+    ->middleware('throttle:30,1')
     ->name('register');
 
 Route::get('/login', Login::class)
@@ -50,8 +49,7 @@ Route::post('/logout', function () {
     return redirect()->route('home')->with('status', 'Déconnecté.');
 })->middleware('auth')->name('logout');
 
-Route::get('/participer', ContestForm::class)
-    ->middleware('throttle:30,1')
+Route::redirect('/participer', '/inscription?role=participant', 301)
     ->name('contest.form');
 
 Route::get('/connexion', ParticipantLogin::class)

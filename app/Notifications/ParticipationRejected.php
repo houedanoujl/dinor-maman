@@ -36,7 +36,7 @@ class ParticipationRejected extends Notification
             ->line('• La photo se passe dans un contexte de cuisine')
             ->line('• L\'image est nette et de bonne qualité')
             ->line('• Le contenu est approprié')
-            ->action('Soumettre une nouvelle participation', route('contest.form'))
+            ->action('Soumettre une nouvelle participation', route('register', ['role' => 'participant']))
             ->salutation('L\'équipe Un moment de cuisine avec maman');
     }
 }

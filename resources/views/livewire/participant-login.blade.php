@@ -40,7 +40,7 @@
             <div class="mt-6 border-t border-gray-100 pt-5 text-center text-sm text-gray-600">
                 Pas encore inscrit ?
                 @if($uploadPhase)
-                    <a href="{{ route('contest.form') }}" class="font-semibold text-dinor-red hover:underline">Participer au concours</a>
+                    <a href="{{ route('register', ['role' => 'participant']) }}" class="font-semibold text-dinor-red hover:underline">Participer au concours</a>
                 @else
                     <span class="text-gray-400">Les inscriptions sont closes.</span>
                 @endif

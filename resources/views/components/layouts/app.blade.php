@@ -16,7 +16,7 @@
             <x-dinor-logo />
             <nav class="flex items-center gap-1 text-sm font-medium sm:gap-4">
                 <a href="{{ route('contest.gallery') }}" class="rounded-lg px-3 py-1.5 text-dinor-dark transition hover:text-dinor-red">Galerie</a>
-                <a href="{{ route('contest.form') }}" class="btn-dinor !py-2 !px-4 text-sm">Participer</a>
+                <a href="{{ route('register', ['role' => 'participant']) }}" class="btn-dinor !py-2 !px-4 text-sm">Participer</a>
             </nav>
         </div>
     </header>

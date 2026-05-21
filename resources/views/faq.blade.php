@@ -40,7 +40,7 @@
     </div>
 
     <div class="mt-10 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-center">
-        <a href="{{ route('contest.form') }}"
+        <a href="{{ route('register', ['role' => 'participant']) }}"
            class="inline-flex items-center justify-center rounded-full bg-dinor-red px-8 py-3 font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">
             Je participe
         </a>

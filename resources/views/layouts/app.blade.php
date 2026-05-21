@@ -57,14 +57,8 @@
                         Gagnants
                     </a>
                 @elseif(! auth()->check() && ! session('participant_token'))
-                    @if($uploadPhase)
-                        <a href="{{ route('contest.form') }}"
-                           class="inline-flex items-center justify-center rounded-full bg-dinor-red px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">
-                            Participer
-                        </a>
-                    @endif
                     <a href="{{ route('register') }}"
-                       class="inline-flex items-center justify-center rounded-full border border-dinor-red px-4 py-2 font-semibold text-dinor-red transition hover:bg-dinor-red hover:text-white">
+                       class="inline-flex items-center justify-center rounded-full bg-dinor-red px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">
                         S'inscrire
                     </a>
                     <a href="{{ route('login') }}"
@@ -140,7 +134,7 @@
                         Gagnants
                     </a>
                 @elseif($uploadPhase && (! $authUser || ! $userParticipant))
-                    <a href="{{ route('contest.form') }}"
+                    <a href="{{ route('register', ['role' => 'participant']) }}"
                        class="flex items-center gap-3 rounded-xl bg-dinor-red px-4 py-3 font-semibold text-white shadow-sm">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
                         Participer
@@ -163,7 +157,7 @@
                 @endif
 
                 @if($authUser?->isVoter() && ! $userParticipant)
-                    <a href="{{ route('contest.form') }}"
+                    <a href="{{ route('register', ['role' => 'participant']) }}"
                        class="flex items-center gap-3 rounded-xl border-2 border-dinor-gold/40 bg-dinor-gold/5 px-4 py-3 font-semibold text-dinor-gold transition hover:bg-dinor-gold/10">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
                         Devenir participant
@@ -283,7 +277,7 @@
                         <li><a href="{{ route('home') }}" class="transition hover:text-white">Accueil</a></li>
                         <li><a href="{{ route('contest.gallery') }}" class="transition hover:text-white">Galerie photos</a></li>
                         @if($uploadPhase && !$contestEnded)
-                            <li><a href="{{ route('contest.form') }}" class="transition hover:text-white">Participer</a></li>
+                            <li><a href="{{ route('register', ['role' => 'participant']) }}" class="transition hover:text-white">Participer</a></li>
                         @endif
                         @if($contestEnded)
                             <li><a href="{{ route('winners.index') }}" class="transition hover:text-white">Gagnants</a></li>
@@ -349,9 +343,9 @@
                     <span>Gagnants</span>
                 </a>
             @elseif($uploadPhase)
-                <a href="{{ route('contest.form') }}"
-                   class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition {{ request()->routeIs('contest.form') ? 'bg-dinor-red/10 text-dinor-red' : 'text-gray-500 hover:bg-dinor-cream hover:text-dinor-red' }}"
-                   @if(request()->routeIs('contest.form')) aria-current="page" @endif>
+                <a href="{{ route('register', ['role' => 'participant']) }}"
+                   class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition {{ request()->routeIs('register') ? 'bg-dinor-red/10 text-dinor-red' : 'text-gray-500 hover:bg-dinor-cream hover:text-dinor-red' }}"
+                   @if(request()->routeIs('register')) aria-current="page" @endif>
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
