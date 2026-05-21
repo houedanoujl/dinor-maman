@@ -2,6 +2,10 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Participant;
+use App\Models\SmsLog;
+use App\Models\User;
+use App\Models\Vote;
 use App\Support\ContestSettings;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -9,6 +13,10 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema as DbSchema;
 
 class ContestSettingsPage extends Page
 {
@@ -119,6 +127,82 @@ class ContestSettingsPage extends Page
 
             ])
             ->statePath('data');
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('resetContestData')
+                ->label('Réinitialiser le concours')
+                ->icon('heroicon-o-trash')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('⚠ Supprimer toutes les participations et votes ?')
+                ->modalDescription('Cette action supprime définitivement : tous les participants, leurs photos, tous les votes, tous les votants et les logs SMS. Les comptes administrateurs sont conservés. Action IRRÉVERSIBLE — à utiliser uniquement avant le lancement officiel du concours.')
+                ->modalSubmitActionLabel('Oui, tout supprimer')
+                ->form([
+                    Forms\Components\TextInput::make('confirmation')
+                        ->label('Tapez SUPPRIMER pour confirmer')
+                        ->required()
+                        ->rule(fn () => function ($attribute, $value, $fail) {
+                            if ($value !== 'SUPPRIMER') {
+                                $fail('Vous devez taper exactement SUPPRIMER.');
+                            }
+                        }),
+                    Forms\Components\TextInput::make('admin_password')
+                        ->label('Votre mot de passe administrateur')
+                        ->password()
+                        ->required()
+                        ->rule(fn () => function ($attribute, $value, $fail) {
+                            if (! Hash::check($value, Auth::user()->password)) {
+                                $fail('Mot de passe incorrect.');
+                            }
+                        }),
+                ])
+                ->action(function (array $data) {
+                    $this->performReset();
+
+                    Notification::make()
+                        ->success()
+                        ->title('Concours réinitialisé')
+                        ->body('Toutes les participations, votes et utilisateurs non-admin ont été supprimés.')
+                        ->send();
+                }),
+        ];
+    }
+
+    protected function performReset(): void
+    {
+        DB::transaction(function () {
+            Vote::query()->delete();
+
+            Participant::query()->each(function (Participant $p) {
+                $p->clearMediaCollection('photo');
+                $p->delete();
+            });
+
+            DB::table('participants')->update(['vote_count' => 0]);
+
+            User::where('role', '!=', User::ROLE_ADMIN)->delete();
+
+            SmsLog::query()->delete();
+
+            foreach (['vote:user:%', 'contest-submit%', 'login:%'] as $pattern) {
+                try {
+                    DB::table('cache')->where('key', 'like', '%' . $pattern)->delete();
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
+
+            if (DB::connection()->getDriverName() === 'mysql') {
+                foreach (['votes', 'participants', 'sms_logs'] as $table) {
+                    if (DbSchema::hasTable($table)) {
+                        DB::statement("ALTER TABLE {$table} AUTO_INCREMENT = 1");
+                    }
+                }
+            }
+        });
     }
 
     protected function getFormActions(): array

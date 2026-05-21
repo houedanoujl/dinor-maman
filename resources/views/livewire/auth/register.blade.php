@@ -177,6 +177,9 @@
 
             {{-- Champs PARTICIPANT --}}
             @if ($role === 'participant')
+                @php $uploadLocked = $contestEnded || ! $uploadOpen; @endphp
+
+                <fieldset @disabled($uploadLocked) class="contents {{ $uploadLocked ? 'opacity-60 pointer-events-none select-none' : '' }}">
                 <div class="rounded-2xl border border-dinor-gold/30 bg-dinor-gold/5 p-4">
                     <p class="flex items-center gap-2 text-sm font-semibold text-dinor-dark">
                         <svg class="h-4 w-4 shrink-0 text-dinor-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -330,6 +333,7 @@
                     <p class="mt-1 text-xs text-gray-400" x-show="!supported">Astuce : la dictée vocale est disponible sur Chrome et Edge.</p>
                     @error('anecdote') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
+                </fieldset>
             @endif
 
             {{-- Consentement --}}
