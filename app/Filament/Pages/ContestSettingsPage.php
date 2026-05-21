@@ -37,7 +37,6 @@ class ContestSettingsPage extends Page
                 : ContestSettings::uploadEndsAt(),
             'reglement'      => ContestSettings::getReglement() ?? $this->defaultReglement(),
             'faq'            => $faq ?: $this->defaultFaq(),
-            'cgu'            => ContestSettings::getCgu() ?? $this->defaultCgu(),
         ]);
     }
 
@@ -105,18 +104,6 @@ class ContestSettingsPage extends Page
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('CGU — Conditions générales d\'utilisation')
-                    ->description('Contenu affiché sur la page /cgu.')
-                    ->schema([
-                        Forms\Components\RichEditor::make('cgu')
-                            ->label('Texte des CGU')
-                            ->toolbarButtons([
-                                'bold', 'italic', 'underline',
-                                'h2', 'h3', 'bulletList', 'orderedList',
-                                'link', 'blockquote', 'undo', 'redo',
-                            ])
-                            ->columnSpanFull(),
-                    ]),
             ])
             ->statePath('data');
     }
@@ -145,10 +132,6 @@ class ContestSettingsPage extends Page
             ContestSettings::setFaq($state['faq']);
         }
 
-        if (! empty($state['cgu'])) {
-            ContestSettings::setCgu($state['cgu']);
-        }
-
         Notification::make()
             ->success()
             ->title('Reglages enregistres')
@@ -168,11 +151,6 @@ class ContestSettingsPage extends Page
             ['q' => 'Peut-on voter plusieurs fois ?', 'a' => 'Chaque visiteur peut voter une seule fois par participant. Les votes sont contrôlés par adresse IP et session.'],
             ['q' => 'Mes données personnelles seront-elles partagées ?', 'a' => 'Non. Les données collectées servent uniquement à la gestion du concours et aux notifications liées à la participation.'],
         ];
-    }
-
-    protected function defaultCgu(): string
-    {
-        return '<h2>Article 1 – Objet</h2><p>Les présentes conditions générales d\'utilisation régissent l\'accès et l\'utilisation de la plateforme du concours « Un moment de cuisine avec maman » organisé par DINOR CI.</p><h2>Article 2 – Acceptation</h2><p>L\'utilisation de la plateforme implique l\'acceptation pleine et entière des présentes CGU.</p><h2>Article 3 – Données personnelles</h2><p>Les données collectées (nom, prénom, téléphone, ville) sont utilisées uniquement pour la gestion du concours. Elles ne seront ni vendues ni cédées à des tiers.</p>';
     }
 
     protected function defaultReglement(): string

@@ -76,4 +76,34 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasOne(Participant::class);
     }
+
+    /**
+     * Normalise un numéro CI vers le format E.164 +225XXXXXXXXXX.
+     * Accepte: 10 chiffres bruts, avec/sans espaces, +225..., 00225..., 225...
+     */
+    public static function normalizePhone(string $raw): string
+    {
+        $digits = preg_replace('/\D/', '', $raw);
+
+        if (str_starts_with($digits, '00225')) {
+            $digits = substr($digits, 5);
+        } elseif (str_starts_with($digits, '225') && strlen($digits) === 13) {
+            $digits = substr($digits, 3);
+        }
+
+        return '+225' . $digits;
+    }
+
+    public static function isValidCiPhone(string $raw): bool
+    {
+        $digits = preg_replace('/\D/', '', $raw);
+
+        if (str_starts_with($digits, '00225')) {
+            $digits = substr($digits, 5);
+        } elseif (str_starts_with($digits, '225') && strlen($digits) === 13) {
+            $digits = substr($digits, 3);
+        }
+
+        return strlen($digits) === 10 && ctype_digit($digits);
+    }
 }

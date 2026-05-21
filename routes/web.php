@@ -64,11 +64,6 @@ Route::get('/faq', function () {
     return view('faq', ['faqItems' => $faq]);
 })->name('faq');
 
-Route::get('/cgu', function () {
-    $cgu = ContestSettings::getCgu();
-    return view('cgu', ['content' => $cgu]);
-})->name('cgu');
-
 Route::get('/galerie', GalleryView::class)
     ->middleware('throttle:120,1')
     ->name('contest.gallery');

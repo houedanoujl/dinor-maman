@@ -182,10 +182,6 @@
                    class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-gray-600 transition hover:bg-dinor-cream hover:text-dinor-red">
                     FAQ
                 </a>
-                <a href="{{ route('cgu') }}"
-                   class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-gray-600 transition hover:bg-dinor-cream hover:text-dinor-red">
-                    CGU
-                </a>
 
                 @if(! $authUser && ! $userParticipant)
                     <div class="mt-2 flex flex-col gap-2 border-t border-gray-100 pt-3">
@@ -292,7 +288,6 @@
                     <ul class="flex flex-col gap-2.5 text-sm text-white/70">
                         <li><a href="{{ route('reglement') }}" class="transition hover:text-white">Règlement du concours</a></li>
                         <li><a href="{{ route('faq') }}" class="transition hover:text-white">Foire aux questions</a></li>
-                        <li><a href="{{ route('cgu') }}" class="transition hover:text-white">CGU</a></li>
                     </ul>
                     @if(!$contestEnded)
                         <div x-data="countdown('{{ $contestEndsAt }}')" class="mt-6 inline-flex items-center gap-2 rounded-lg border border-dinor-gold/30 bg-dinor-gold/10 px-3 py-2 text-xs text-dinor-gold">

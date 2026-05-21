@@ -58,11 +58,6 @@ class VoteButton extends Component
             return;
         }
 
-        if ($this->participant->user_id === Auth::id()) {
-            $this->dispatch('vote-error', message: 'Vous ne pouvez pas voter pour votre propre photo.');
-            return;
-        }
-
         try {
             DB::transaction(function () {
                 Vote::create([

@@ -4,14 +4,15 @@ namespace App\Livewire\Auth;
 
 use App\Models\Participant;
 use App\Models\User;
+use App\Models\SmsLog;
 use App\Notifications\ParticipationReceived;
-use App\Services\SmsNotifier;
-use App\Services\TwilioSms;
+use App\Services\SmsDispatcher;
 use App\Support\ContestSettings;
 use App\Support\ImageSanitizer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -30,9 +31,6 @@ class Register extends Component
 
     public string $role = User::ROLE_VOTER;
 
-    public string $email = '';
-    public string $password = '';
-    public string $password_confirmation = '';
     public bool $consent = false;
 
     public string $name = '';
@@ -40,13 +38,11 @@ class Register extends Component
     public string $first_name = '';
     public string $last_name = '';
     public string $phone = '';
+    public string $commune = '';
+    public string $quartier = '';
     public string $city = '';
     public $photo;
     public string $anecdote = '';
-
-    public string $sms_code_input = '';
-    public ?int $participant_id = null;
-    public string $sms_error = '';
 
     public function mount()
     {
@@ -67,7 +63,7 @@ class Register extends Component
             }
 
             $this->role = User::ROLE_PARTICIPANT;
-            $this->email = $u->email;
+            $this->phone = $u->phone ?? '';
             $names = explode(' ', $u->name, 2);
             $this->first_name = $names[0] ?? '';
             $this->last_name = $names[1] ?? '';
@@ -82,8 +78,7 @@ class Register extends Component
         ];
 
         if (! Auth::check()) {
-            $shared['email']    = ['required', 'email', 'max:150', 'unique:users,email'];
-            $shared['password'] = ['required', 'string', 'min:8', 'max:100', 'confirmed'];
+            $shared['phone'] = ['required', 'string', 'max:32'];
         }
 
         if ($this->role === User::ROLE_VOTER) {
@@ -95,8 +90,8 @@ class Register extends Component
         return array_merge($shared, [
             'first_name' => ['required', 'string', 'min:2', 'max:50'],
             'last_name'  => ['required', 'string', 'min:2', 'max:50'],
-            'phone'      => ['required', 'string', 'regex:/^(\+?\d{8,15})$/', 'unique:participants,phone'],
-            'city'       => ['required', 'string', 'min:2', 'max:100'],
+            'commune'    => ['required', 'string', Rule::in(\App\Support\Abidjan::communes())],
+            'quartier'   => ['required', 'string', 'max:100'],
             'photo'      => ['required', 'image', 'mimes:jpeg,jpg,png', 'mimetypes:image/jpeg,image/png', 'max:4096'],
             'anecdote'   => ['nullable', 'string', 'max:500'],
         ]);
@@ -104,7 +99,36 @@ class Register extends Component
 
     public function submit()
     {
+        if ($this->role === User::ROLE_PARTICIPANT) {
+            $allowed = \App\Support\Abidjan::quartiers($this->commune);
+            if (! in_array($this->quartier, $allowed, true)) {
+                throw ValidationException::withMessages([
+                    'quartier' => 'Sélectionnez un quartier valide pour cette commune.',
+                ]);
+            }
+            $this->city = "{$this->commune} - {$this->quartier}";
+        }
+
         $this->validate();
+
+        if (! Auth::check()) {
+            if (! User::isValidCiPhone($this->phone)) {
+                throw ValidationException::withMessages([
+                    'phone' => 'Numéro invalide. 10 chiffres requis (ex: 07 08 09 10 11).',
+                ]);
+            }
+
+            $normalized = User::normalizePhone($this->phone);
+
+            $existing = User::where('phone', $normalized)->first();
+            if ($existing) {
+                throw ValidationException::withMessages([
+                    'phone' => 'Ce numéro est déjà inscrit. Connectez-vous.',
+                ]);
+            }
+
+            $this->phone = $normalized;
+        }
 
         if ($this->role === User::ROLE_VOTER) {
             return $this->submitVoter();
@@ -113,22 +137,32 @@ class Register extends Component
         return $this->submitParticipant();
     }
 
+    protected function generatePassword(): string
+    {
+        return str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    }
+
     protected function submitVoter()
     {
+        $password = $this->generatePassword();
+
         $user = User::create([
             'name'     => trim($this->name),
-            'email'    => strtolower(trim($this->email)),
-            'password' => Hash::make($this->password),
+            'phone'    => $this->phone,
+            'email'    => null,
+            'password' => Hash::make($password),
             'role'     => User::ROLE_VOTER,
         ]);
+
+        $this->sendCredentialsSms($user, $password);
 
         Auth::login($user, true);
 
         return redirect()->route('contest.gallery')
-            ->with('status', 'Bienvenue ! Vous pouvez voter pour vos favoris.');
+            ->with('status', 'Bienvenue ! Votre mot de passe a été envoyé par SMS.');
     }
 
-    protected function submitParticipant(): void
+    protected function submitParticipant()
     {
         if (ContestSettings::isEnded()) {
             throw ValidationException::withMessages([
@@ -144,18 +178,21 @@ class Register extends Component
 
         $this->ensureSubmissionIsAllowed();
 
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $password = $this->generatePassword();
 
-        $participant = DB::transaction(function () use ($code) {
+        $result = DB::transaction(function () use ($password) {
             $user = Auth::user();
+            $generatedPwd = null;
 
             if (! $user) {
                 $user = User::create([
                     'name'     => trim($this->first_name . ' ' . $this->last_name),
-                    'email'    => strtolower(trim($this->email)),
-                    'password' => Hash::make($this->password),
+                    'phone'    => $this->phone,
+                    'email'    => null,
+                    'password' => Hash::make($password),
                     'role'     => User::ROLE_PARTICIPANT,
                 ]);
+                $generatedPwd = $password;
                 Auth::login($user, true);
             } elseif ($user->isVoter()) {
                 $user->update(['role' => User::ROLE_PARTICIPANT]);
@@ -165,13 +202,12 @@ class Register extends Component
                 'user_id'             => $user->id,
                 'first_name'          => trim($this->first_name),
                 'last_name'           => trim($this->last_name),
-                'phone'               => trim($this->phone),
+                'phone'               => $user->phone,
                 'city'                => trim($this->city),
-                'email'               => $user->email,
+                'email'               => null,
                 'anecdote'            => $this->anecdote ? trim($this->anecdote) : null,
                 'status'              => Participant::STATUS_PENDING,
-                'sms_code'            => $code,
-                'sms_code_expires_at' => now()->addMinutes(10),
+                'phone_verified_at'   => now(),
             ]);
 
             $extension = ImageSanitizer::sanitize($this->photo->getRealPath());
@@ -179,112 +215,42 @@ class Register extends Component
                 ->usingFileName(Str::uuid() . '.' . $extension)
                 ->toMediaCollection('photo');
 
-            return $participant;
+            return ['user' => $user, 'participant' => $participant, 'password' => $generatedPwd];
         });
 
-        $this->sendSmsCode($participant, $code);
+        if ($result['password']) {
+            $this->sendCredentialsSms($result['user'], $result['password']);
+        }
 
-        $this->participant_id = $participant->id;
-        $this->step = 'verify';
-        $this->reset(['photo', 'anecdote']);
+        $this->finalizeParticipation($result['participant']);
     }
 
-    public function verifyCode(): void
+    protected function sendCredentialsSms(User $user, string $password): void
     {
-        $this->sms_error = '';
+        $loginUrl = route('login');
+        $message = "Bienvenue sur DINOR. Votre mot de passe: {$password}. Connectez-vous avec votre numero {$user->phone} sur {$loginUrl}. Conservez ce SMS, il ne sera pas renvoye.";
 
-        if (! $this->participant_id) {
-            $this->sms_error = 'Session expirée. Recommencez.';
-            return;
-        }
-
-        $participant = Participant::find($this->participant_id);
-        if (! $participant) {
-            $this->sms_error = 'Participation introuvable. Recommencez.';
-            return;
-        }
-
-        if ($participant->phone_verified_at) {
-            $this->finalizeParticipation($participant);
-            return;
-        }
-
-        if (! $participant->sms_code_expires_at || now()->greaterThanOrEqualTo($participant->sms_code_expires_at)) {
-            $this->sms_error = 'Code expiré. Cliquez sur "Renvoyer le code".';
-            return;
-        }
-
-        if ($this->sms_code_input !== $participant->sms_code) {
-            $this->sms_error = 'Code incorrect. Vérifiez votre SMS.';
-            return;
-        }
-
-        $participant->update([
-            'phone_verified_at'   => now(),
-            'sms_code'            => null,
-            'sms_code_expires_at' => null,
-        ]);
-
-        $this->finalizeParticipation($participant);
-    }
-
-    public function resendCode(): void
-    {
-        if (! $this->participant_id) {
-            return;
-        }
-
-        $key = 'sms-resend:' . $this->participant_id;
-        if (RateLimiter::tooManyAttempts($key, 2)) {
-            $this->sms_error = 'Trop de tentatives. Attendez quelques minutes.';
-            return;
-        }
-        RateLimiter::hit($key, 300);
-
-        $participant = Participant::find($this->participant_id);
-        if (! $participant || $participant->phone_verified_at) {
-            return;
-        }
-
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $participant->update([
-            'sms_code'            => $code,
-            'sms_code_expires_at' => now()->addMinutes(10),
-        ]);
-
-        $this->sendSmsCode($participant, $code);
-        $this->sms_error = '';
-        $this->dispatch('toast', type: 'success', message: 'Code renvoyé par SMS.');
-    }
-
-    protected function sendSmsCode(Participant $participant, string $code): void
-    {
-        $message = "Votre code de validation : {$code}\nValable 10 minutes.\nConcours DINOR.";
-
-        try {
-            app(TwilioSms::class)->send($participant->phone, $message);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Twilio SMS failed', [
-                'phone' => $participant->phone,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        app(SmsDispatcher::class)->sendOnce(
+            $user->phone,
+            SmsLog::TYPE_CREDENTIALS,
+            $message
+        );
     }
 
     protected function finalizeParticipation(Participant $participant): void
     {
         if ($participant->email) {
-            Notification::route('mail', $participant->email)
-                ->notify(new ParticipationReceived($participant));
+            try {
+                Notification::route('mail', $participant->email)
+                    ->notify(new ParticipationReceived($participant));
+            } catch (\Throwable $e) {
+                Log::warning('Mail notif failed', ['err' => $e->getMessage()]);
+            }
         }
-
-        app(SmsNotifier::class)->send(
-            $participant->phone,
-            "Bonjour {$participant->first_name}, votre participation a bien ete recue et est en attente de validation."
-        );
 
         session(['participant_token' => $participant->dashboard_token]);
         $this->step = 'done';
+        $this->reset(['photo', 'anecdote']);
     }
 
     protected function ensureSubmissionIsAllowed(): void
@@ -305,9 +271,11 @@ class Register extends Component
     public function render()
     {
         return view('livewire.auth.register', [
-            'uploadOpen'   => ContestSettings::isUploadPhase(),
-            'contestEnded' => ContestSettings::isEnded(),
-            'isAuthed'     => Auth::check(),
+            'uploadOpen'      => ContestSettings::isUploadPhase(),
+            'contestEnded'    => ContestSettings::isEnded(),
+            'isAuthed'        => Auth::check(),
+            'communes'        => \App\Support\Abidjan::communes(),
+            'quartiersMap'    => \App\Support\Abidjan::quartiersByCommune(),
         ]);
     }
 }

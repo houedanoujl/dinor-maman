@@ -8,7 +8,7 @@
             Règlement du concours<br>
             <span class="text-dinor-red">1 moment de cuisine avec maman</span>
         </h1>
-        <p class="mt-3 text-sm text-gray-500">En vigueur à compter du 21/05/2026</p>
+        <p class="mt-3 text-sm text-gray-500">En vigueur à compter du 22/05/2026</p>
     </div>
 
     @php

@@ -8,6 +8,7 @@
                         ? 'border-gray-200 bg-gray-100 text-gray-400'
                         : 'border-gray-200 bg-white text-gray-600 hover:border-dinor-red hover:text-dinor-red') }}"
         type="button"
+        title="{{ $hasVoted ? 'Vous avez déjà voté pour cette photo.' : 'Cliquer ici pour voter' }}"
         aria-label="{{ $hasVoted ? 'Vous avez déjà voté' : 'Voter pour ' . $participant->full_name }}">
     <svg class="h-4 w-4 {{ $hasVoted ? 'fill-dinor-red' : 'fill-none' }}"
          viewBox="0 0 24 24"

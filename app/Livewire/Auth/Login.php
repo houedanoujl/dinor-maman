@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -12,8 +13,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Login extends Component
 {
-    #[Validate('required|email|max:150')]
-    public string $email = '';
+    #[Validate('required|string|max:32')]
+    public string $phone = '';
 
     #[Validate('required|string|min:1')]
     public string $password = '';
@@ -24,19 +25,27 @@ class Login extends Component
     {
         $this->validate();
 
-        $key = 'login:' . strtolower(trim($this->email)) . '|' . request()->ip();
+        if (! User::isValidCiPhone($this->phone)) {
+            throw ValidationException::withMessages([
+                'phone' => 'Numéro invalide. 10 chiffres requis (ex: 07 08 09 10 11).',
+            ]);
+        }
+
+        $normalized = User::normalizePhone($this->phone);
+
+        $key = 'login:' . $normalized . '|' . request()->ip();
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             throw ValidationException::withMessages([
-                'email' => "Trop de tentatives. Réessayez dans {$seconds} secondes.",
+                'phone' => "Trop de tentatives. Réessayez dans {$seconds} secondes.",
             ]);
         }
 
-        if (! Auth::attempt(['email' => strtolower(trim($this->email)), 'password' => $this->password], $this->remember)) {
+        if (! Auth::attempt(['phone' => $normalized, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($key, 300);
             throw ValidationException::withMessages([
-                'email' => 'Identifiants incorrects.',
+                'phone' => 'Téléphone ou mot de passe incorrect.',
             ]);
         }
 
@@ -45,7 +54,6 @@ class Login extends Component
 
         $user = Auth::user();
 
-        // Redirige vers l'URL voulue avant login si elle existe
         if (session()->has('url.intended')) {
             return redirect()->intended();
         }

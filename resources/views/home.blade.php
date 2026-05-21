@@ -2,8 +2,8 @@
 
 @section('content')
 <section class="relative overflow-hidden">
-    <div class="container mx-auto grid gap-10 px-4 py-14 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:py-20">
-        <div>
+    <div class="container mx-auto px-4 py-14 lg:py-20">
+        <div class="mx-auto max-w-3xl text-center">
             <p class="mb-4 inline-flex items-center gap-2 rounded-full {{ $contestEnded ? 'bg-gray-100 text-gray-600' : 'bg-dinor-red/10 text-dinor-red' }} px-3 py-1 text-xs font-semibold uppercase tracking-wider">
                 <span class="h-1.5 w-1.5 rounded-full {{ $contestEnded ? 'bg-gray-500' : 'bg-dinor-red' }}"></span>
                 {{ $contestEnded ? 'Concours terminé' : 'Concours photo en cours' }}
@@ -12,7 +12,7 @@
                 Un moment de<br />
                 <span class="text-dinor-red">cuisine</span> avec maman
             </h1>
-            <p class="mt-6 max-w-xl text-lg leading-8 text-gray-600">
+            <p class="mt-6 mx-auto max-w-xl text-lg leading-8 text-gray-600">
                 @if($contestEnded)
                     Le concours est terminé — découvrez le palmarès des familles qui ont marqué cette édition.
                 @else
@@ -20,7 +20,7 @@
                     et célébrez les recettes qui ont bercé votre famille.
                 @endif
             </p>
-            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 @if($contestEnded)
                     <a href="{{ route('winners.index') }}" class="btn-dinor">Voir les gagnants</a>
                     <a href="{{ route('contest.gallery') }}" class="btn-ghost">Revoir la galerie</a>
@@ -45,7 +45,7 @@
                 </div>
             @endif
 
-            <dl class="mt-10 flex flex-wrap gap-x-10 gap-y-4 text-sm">
+            <dl class="mt-10 flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm">
                 <div>
                     <dt class="text-gray-500">Participants</dt>
                     <dd class="font-display text-2xl font-bold text-dinor-dark">{{ number_format($approvedCount) }}</dd>
@@ -55,48 +55,6 @@
                     <dd class="font-display text-2xl font-bold text-dinor-red">{{ number_format($totalVotes) }}</dd>
                 </div>
             </dl>
-        </div>
-
-        <div class="relative">
-            @if ($collage->isNotEmpty() || $topParticipants->isNotEmpty())
-                @php $cards = $topParticipants->concat($collage)->take(5); @endphp
-                <div class="grid h-120 grid-cols-6 grid-rows-6 gap-3 md:h-140">
-                    @foreach ($cards as $i => $p)
-                        @php
-                            $spans = [
-                                'col-span-4 row-span-4',
-                                'col-span-2 row-span-3',
-                                'col-span-2 row-span-3',
-                                'col-span-3 row-span-2',
-                                'col-span-3 row-span-2',
-                            ];
-                            $img = $p->getFirstMediaUrl('photo', 'card');
-                        @endphp
-                        <a href="{{ route('participant.show', $p) }}"
-                           class="group relative overflow-hidden rounded-2xl shadow-md {{ $spans[$i] ?? 'col-span-3 row-span-2' }}">
-                            @if ($img)
-                                <img src="{{ $img }}" alt="{{ $p->full_name }}"
-                                     class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                            @else
-                                <div class="flex h-full w-full items-center justify-center bg-linear-to-br from-dinor-red to-dinor-gold text-4xl font-extrabold text-white">
-                                    {{ strtoupper(substr($p->first_name, 0, 1) . substr($p->last_name, 0, 1)) }}
-                                </div>
-                            @endif
-                            <div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/20 to-transparent p-3 text-white">
-                                <p class="truncate text-sm font-semibold">{{ $p->full_name }}</p>
-                                <p class="flex items-center gap-1 text-xs opacity-90">
-                                    <svg class="h-3 w-3 text-dinor-gold" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.5-9.1C1.1 8.6 3.4 5 7 5c2 0 3.6 1 5 2.6C13.4 6 15 5 17 5c3.6 0 5.9 3.6 4.5 6.9C19.5 16.4 12 21 12 21z"/></svg>
-                                    {{ $p->vote_count }}
-                                </p>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            @else
-                <div class="flex aspect-square items-center justify-center rounded-2xl bg-linear-to-br from-dinor-red to-dinor-gold p-12 text-center text-white">
-                    <p class="font-display text-2xl">Soyez la première participation publiée !</p>
-                </div>
-            @endif
         </div>
     </div>
 </section>
@@ -127,14 +85,24 @@
                         {{ $loop->iteration }}
                     </div>
                 </a>
-                <div class="flex items-center justify-between gap-3 p-5">
-                    <div class="min-w-0">
-                        <a href="{{ route('participant.show', $participant) }}" class="block truncate font-display text-lg font-bold text-dinor-dark hover:text-dinor-red">
-                            {{ $participant->full_name }}
-                        </a>
-                        <p class="truncate text-sm text-gray-500">{{ $participant->city }}</p>
+                <div class="p-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <a href="{{ route('participant.show', $participant) }}" class="block truncate font-display text-lg font-bold text-dinor-dark hover:text-dinor-red">
+                                {{ $participant->full_name }}
+                            </a>
+                            <p class="truncate text-sm text-gray-500">{{ $participant->city }}</p>
+                        </div>
+                        <div class="shrink-0 text-right">
+                            <p class="font-display text-2xl font-bold text-dinor-red leading-none">{{ number_format($participant->vote_count) }}</p>
+                            <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">vote{{ $participant->vote_count > 1 ? 's' : '' }}</p>
+                        </div>
                     </div>
-                    <livewire:vote-button :participant="$participant" :key="'home-vote-'.$participant->id" />
+
+                    <div class="mt-4 flex items-center gap-3">
+                        <livewire:vote-button :participant="$participant" :key="'home-vote-'.$participant->id" />
+                        <span class="text-sm font-semibold text-dinor-red">👉 Cliquez ici pour voter</span>
+                    </div>
                 </div>
             </article>
         @empty

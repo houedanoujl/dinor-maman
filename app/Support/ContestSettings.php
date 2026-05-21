@@ -12,12 +12,10 @@ class ContestSettings
     private const KEY_UPLOAD_ENDS = 'contest.upload_ends_at';
     private const KEY_REGLEMENT = 'contest.reglement';
     private const KEY_FAQ = 'contest.faq';
-    private const KEY_CGU = 'contest.cgu';
     private const CACHE_KEY = 'contest_ends_at';
     private const CACHE_KEY_UPLOAD_ENDS = 'contest_upload_ends_at';
     private const CACHE_KEY_REGLEMENT = 'contest_reglement';
     private const CACHE_KEY_FAQ = 'contest_faq';
-    private const CACHE_KEY_CGU = 'contest_cgu';
 
     public static function endsAt(): Carbon
     {
@@ -153,24 +151,4 @@ class ContestSettings
         Cache::forget(self::CACHE_KEY_FAQ);
     }
 
-    public static function getCgu(): ?string
-    {
-        return Cache::remember(self::CACHE_KEY_CGU, 3600, function () {
-            try {
-                return DB::table('settings')->where('key', self::KEY_CGU)->value('value');
-            } catch (\Throwable $e) {
-                return null;
-            }
-        });
-    }
-
-    public static function setCgu(string $html): void
-    {
-        DB::table('settings')->updateOrInsert(
-            ['key' => self::KEY_CGU],
-            ['value' => $html, 'updated_at' => now(), 'created_at' => now()]
-        );
-
-        Cache::forget(self::CACHE_KEY_CGU);
-    }
 }

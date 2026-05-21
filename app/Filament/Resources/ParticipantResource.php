@@ -47,7 +47,11 @@ class ParticipantResource extends Resource
                     Forms\Components\TextInput::make('first_name')->required()->label('Prénom'),
                     Forms\Components\TextInput::make('last_name')->required()->label('Nom'),
                     Forms\Components\TextInput::make('phone')->tel()->required()->label('Téléphone'),
-                    Forms\Components\TextInput::make('city')->required()->label('Ville'),
+                    Forms\Components\Select::make('city')
+                        ->required()
+                        ->label('Ville / Quartier')
+                        ->options(\App\Support\Abidjan::flat())
+                        ->searchable(),
                     Forms\Components\TextInput::make('email')->email()->label('Email'),
                     Forms\Components\Select::make('status')
                         ->label('Statut')
@@ -156,8 +160,8 @@ class ParticipantResource extends Resource
                         'rejected' => 'Rejeté',
                     ]),
                 SelectFilter::make('city')
-                    ->label('Ville')
-                    ->options(fn () => Participant::query()->distinct()->orderBy('city')->pluck('city', 'city')->toArray())
+                    ->label('Ville / Quartier')
+                    ->options(fn () => \App\Support\Abidjan::flat())
                     ->searchable(),
             ])
             ->recordActions([

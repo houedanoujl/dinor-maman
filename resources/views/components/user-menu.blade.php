@@ -21,7 +21,7 @@
 @endphp
 
 @if($isLogged)
-    <div x-data="{ open: false }" class="relative">
+    <div x-data="{ open: false, confirmLogout: false }" class="relative">
         <button type="button"
                 x-on:click="open = !open"
                 x-on:click.outside="open = false"
@@ -98,29 +98,57 @@
                 </a>
             @endif
 
-            @if($authUser)
-                <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100 mt-1 pt-1">
-                    @csrf
-                    <button type="submit"
-                            class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition hover:bg-red-50">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <div class="border-t border-gray-100 mt-1 pt-1">
+                <button type="button"
+                        x-on:click="open = false; confirmLogout = true"
+                        class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition hover:bg-red-50">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Se déconnecter
+                </button>
+            </div>
+        </div>
+
+        {{-- Warning modal --}}
+        <div x-show="confirmLogout"
+             x-cloak
+             x-transition.opacity
+             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+             x-on:keydown.escape.window="confirmLogout = false">
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+                 x-on:click.outside="confirmLogout = false">
+                <div class="mb-4 flex items-start gap-3">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                        <svg class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                         </svg>
-                        Se déconnecter
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-dinor-dark">Confirmer la déconnexion</h3>
+                        <p class="mt-1 text-sm text-gray-600">
+                            Vous allez être déconnecté. Pour vous reconnecter, vous aurez besoin de votre <strong>numéro de téléphone</strong> et du <strong>mot de passe reçu par SMS</strong> lors de votre inscription.
+                        </p>
+                        <p class="mt-2 text-sm font-semibold text-red-700">
+                            ⚠️ Le mot de passe SMS n'est envoyé qu'une seule fois. Assurez-vous de le conserver avant de vous déconnecter.
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button type="button"
+                            x-on:click="confirmLogout = false"
+                            class="rounded-full border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                        Rester connecté
                     </button>
-                </form>
-            @else
-                <form method="POST" action="{{ route('participant.logout') }}" class="border-t border-gray-100 mt-1 pt-1">
-                    @csrf
-                    <button type="submit"
-                            class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition hover:bg-red-50">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Se déconnecter
-                    </button>
-                </form>
-            @endif
+                    <form method="POST" action="{{ $authUser ? route('logout') : route('participant.logout') }}">
+                        @csrf
+                        <button type="submit"
+                                class="w-full rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700 sm:w-auto">
+                            Confirmer la déconnexion
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 @endif
