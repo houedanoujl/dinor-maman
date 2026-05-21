@@ -5,6 +5,9 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\VoteResource\Pages;
 use App\Models\Vote;
 use App\Models\Participant;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -69,6 +72,21 @@ class VoteResource extends Resource
                     ->limit(40)
                     ->tooltip(fn ($record) => $record->user_agent)
                     ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->recordActions([
+                DeleteAction::make()
+                    ->label('Supprimer')
+                    ->modalHeading('Supprimer ce vote ?')
+                    ->modalDescription('Action irréversible. Le compteur de votes du participant sera décrémenté.')
+                    ->successNotificationTitle('Vote supprimé.'),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
+                        ->label('Supprimer la sélection')
+                        ->modalHeading('Supprimer les votes sélectionnés ?')
+                        ->modalDescription('Action irréversible. Les compteurs de votes seront décrémentés.'),
+                ]),
             ])
             ->filters([
                 SelectFilter::make('participant_id')

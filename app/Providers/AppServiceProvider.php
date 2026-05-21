@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Participant;
+use App\Models\Vote;
 use App\Observers\ParticipantObserver;
+use App\Observers\VoteObserver;
 use App\Support\ContestSettings;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Participant::observe(ParticipantObserver::class);
+        Vote::observe(VoteObserver::class);
 
         // Partage la date de fin du concours et son état avec toutes les vues
         View::composer('*', function ($view) {

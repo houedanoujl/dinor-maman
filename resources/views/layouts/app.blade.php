@@ -240,10 +240,10 @@
 
     <footer class="mt-16 bg-dinor-dark text-white">
         <div class="container mx-auto px-4 py-12">
-            <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid gap-10 text-center sm:grid-cols-2 lg:grid-cols-3 sm:place-items-center">
 
                 {{-- Branding --}}
-                <div class="flex flex-col gap-4">
+                <div class="flex flex-col items-center gap-4">
                     <a href="{{ route('home') }}" class="inline-flex items-center gap-3 group">
                         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-dinor-red shadow-lg">
                             <svg viewBox="0 0 32 32" class="h-6 w-6" fill="white" aria-hidden="true">
@@ -260,7 +260,7 @@
                             Un moment de<br>cuisine avec maman
                         </span>
                     </a>
-                    <p class="max-w-xs text-sm leading-relaxed text-white/60">
+                    <p class="mx-auto max-w-xs text-sm leading-relaxed text-white/60">
                         Partagez votre plus beau moment en cuisine, invitez vos proches à voter et célébrez les recettes familiales.
                     </p>
                     <p class="text-xs text-white/40">&copy; {{ date('Y') }} Dinor. Tous droits réservés.</p>
@@ -304,8 +304,9 @@
 
         {{-- Bottom bar --}}
         <div class="border-t border-white/10">
-            <div class="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-4 text-xs text-white/40">
+            <div class="container mx-auto flex flex-col items-center justify-center gap-2 px-4 py-4 text-center text-xs text-white/40 sm:flex-row sm:gap-6">
                 <span>Concours photo culinaire — Édition {{ date('Y') }}</span>
+                <span class="hidden sm:inline">•</span>
                 <span>Propulsé par <span class="text-dinor-gold font-semibold">Dinor</span></span>
             </div>
         </div>

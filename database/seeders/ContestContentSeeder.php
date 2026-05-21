@@ -71,7 +71,7 @@ class ContestContentSeeder extends Seeder
 <p>DINOR CI se réserve le droit de modifier les dates du jeu ou d'annuler l'opération en cas de force majeure ou de circonstances indépendantes de sa volonté.</p>
 
 <h2>Article 7 – Votes</h2>
-<p>Les votes sont ouverts à tous, sans inscription obligatoire. Chaque visiteur peut voter une seule fois par participant, le vote étant contrôlé par adresse IP, session ou tout autre dispositif technique mis en place par l'Organisateur.</p>
+<p>Pour voter, chaque visiteur doit créer un compte sur la plateforme en renseignant son numéro de téléphone. Un mot de passe lui est alors envoyé par SMS. Chaque utilisateur ne peut voter qu'une seule fois par participant. Les votes sont également contrôlés par adresse IP, session et tout autre dispositif technique mis en place par l'Organisateur afin de prévenir les abus.</p>
 <p>Les votes automatisés, frauduleux ou obtenus par des moyens non conformes entraîneront la disqualification du participant concerné.</p>
 
 <h2>Article 8 – Désignation des gagnants</h2>
@@ -98,7 +98,7 @@ class ContestContentSeeder extends Seeder
 
 <h2>Article 12 – Données personnelles</h2>
 <p>Les données collectées dans le cadre du jeu-concours, notamment le nom, prénom, téléphone et ville, sont utilisées uniquement pour la gestion du concours, la modération des participations, les notifications et la remise des lots. Ces données ne seront ni vendues ni cédées à des tiers.</p>
-<p>Conformément à la réglementation applicable, chaque participant dispose d'un droit d'accès, de rectification et de suppression de ses données personnelles en contactant DINOR CI.</p>
+<p>Conformément à la réglementation applicable en Côte d'Ivoire, chaque participant dispose d'un droit d'accès, de rectification et de suppression de ses données personnelles en contactant DINOR CI ou les autorités ivoiriennes chargées de la protection des données personnelles (ARTCI).</p>
 
 <h2>Article 13 – Responsabilité</h2>
 <p>DINOR CI ne saurait être tenu responsable :</p>
@@ -144,21 +144,21 @@ HTML;
             ['q' => 'Comment les gagnants sont-ils désignés ?',
              'a' => "Les gagnants seront les 3 participants ayant obtenu le plus grand nombre de votes valides (likes) à la clôture du concours Jeudi 28 Mai 2026 à 12h00."],
             ['q' => 'Qui peut voter ?',
-             'a' => "Tout le monde peut voter, sans inscription."],
+             'a' => "Pour voter, il faut créer un compte avec son numéro de téléphone. Un mot de passe est envoyé gratuitement par SMS et permet de se connecter à la plateforme."],
             ['q' => 'Peut-on voter plusieurs fois ?',
-             'a' => "Chaque visiteur peut voter une seule fois par participant. Les votes sont contrôlés par adresse IP et session."],
+             'a' => "Non. Chaque compte ne peut voter qu'une seule fois par participant. Les votes sont également contrôlés par adresse IP et session pour prévenir les abus."],
             ['q' => 'Les votes frauduleux sont-ils autorisés ?',
              'a' => "Non. Les votes automatisés ou frauduleux peuvent entraîner la disqualification du participant concerné."],
             ['q' => 'Que se passe-t-il en cas d\'égalité ?',
              'a' => "En cas d'égalité, la photo soumise en premier sera priorisée."],
             ['q' => 'Quelles sont les récompenses ?',
-             'a' => "Les gagnants recevront des lots composés de produits DINOR (à préciser)."],
+             'a' => "Les gagnants recevront des lots composés de produits DINOR (huile Dinor, mayonnaise Dinor, gadgets)."],
             ['q' => 'Ma photo peut-elle être utilisée par DINOR ?',
              'a' => "Oui. En participant, vous autorisez DINOR à utiliser votre photo dans le cadre de la communication liée au concours : réseaux sociaux, site web ou supports promotionnels."],
             ['q' => 'Mes données personnelles seront-elles partagées ?',
              'a' => "Non. Les données collectées servent uniquement à la gestion du concours et aux notifications liées à la participation."],
             ['q' => 'Puis-je demander la suppression de mes données ?',
-             'a' => "Oui. Conformément au RGPD, vous pouvez demander l'accès, la modification ou la suppression de vos données en contactant l'équipe organisatrice."],
+             'a' => "Oui. Conformément à la réglementation ivoirienne sur la protection des données personnelles (ARTCI), vous pouvez demander l'accès, la modification ou la suppression de vos données en contactant l'équipe organisatrice ou les autorités ivoiriennes chargées de la protection des données personnelles."],
             ['q' => 'Le règlement peut-il être modifié ?',
              'a' => "L'organisateur se réserve le droit de modifier le règlement si nécessaire. Les participants seront informés en cas de changement important."],
             ['q' => 'Quelle est la date de début du concours ?',

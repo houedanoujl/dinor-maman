@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SmsLogResource\Pages;
 use App\Models\SmsLog;
+use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
@@ -117,7 +118,7 @@ class SmsLogResource extends Resource
                         ->when($data['until'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))),
             ])
             ->recordActions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->modalHeading('Détail du SMS'),
             ]);
     }
