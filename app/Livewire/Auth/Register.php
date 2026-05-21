@@ -178,9 +178,28 @@ class Register extends Component
 
         $this->ensureSubmissionIsAllowed();
 
+        // Refus si user déjà inscrit avec une participation
+        if ($u = Auth::user()) {
+            $existing = Participant::where('user_id', $u->id)->first();
+            if ($existing) {
+                session(['participant_token' => $existing->dashboard_token]);
+                return redirect()->route('participant.dashboard', $existing->dashboard_token)
+                    ->with('status', 'Vous avez déjà soumis une participation.');
+            }
+        }
+
+        // Refus si téléphone déjà utilisé par un autre participant
+        $phoneToCheck = Auth::check() ? Auth::user()->phone : $this->phone;
+        if ($phoneToCheck && Participant::where('phone', $phoneToCheck)->exists()) {
+            throw ValidationException::withMessages([
+                'phone' => 'Ce numéro a déjà été utilisé pour une participation. Une seule participation par numéro.',
+            ]);
+        }
+
         $password = $this->generatePassword();
 
-        $result = DB::transaction(function () use ($password) {
+        try {
+            $result = DB::transaction(function () use ($password) {
             $user = Auth::user();
             $generatedPwd = null;
 
@@ -216,7 +235,13 @@ class Register extends Component
                 ->toMediaCollection('photo');
 
             return ['user' => $user, 'participant' => $participant, 'password' => $generatedPwd];
-        });
+            });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            Log::warning('Participation duplicate phone', ['phone' => $this->phone, 'err' => $e->getMessage()]);
+            throw ValidationException::withMessages([
+                'phone' => 'Ce numéro a déjà été utilisé pour une participation.',
+            ]);
+        }
 
         if ($result['password']) {
             $this->sendCredentialsSms($result['user'], $result['password']);
