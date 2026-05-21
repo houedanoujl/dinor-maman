@@ -35,6 +35,7 @@ class ContestSettingsPage extends Page
             'upload_ends_at' => ContestSettings::uploadEndsAt()->equalTo(ContestSettings::endsAt())
                 ? null
                 : ContestSettings::uploadEndsAt(),
+            'announce_at'    => ContestSettings::announceAt(),
             'reglement'      => ContestSettings::getReglement() ?? $this->defaultReglement(),
             'faq'            => $faq ?: $this->defaultFaq(),
         ]);
@@ -65,6 +66,18 @@ class ContestSettingsPage extends Page
                             ->displayFormat('d/m/Y H:i')
                             ->before('ends_at')
                             ->helperText("Doit être antérieure à la fin du concours."),
+                    ]),
+
+                Section::make("Annonce des gagnants")
+                    ->description("Date et heure de proclamation des résultats. Affichée publiquement sur la plateforme.")
+                    ->schema([
+                        Forms\Components\DateTimePicker::make('announce_at')
+                            ->label("Proclamation des résultats")
+                            ->seconds(false)
+                            ->native(false)
+                            ->displayFormat('d/m/Y H:i')
+                            ->after('ends_at')
+                            ->helperText("Doit être postérieure à la fin des votes."),
                     ]),
 
                 Section::make('Règlement du concours')
@@ -123,6 +136,7 @@ class ContestSettingsPage extends Page
 
         ContestSettings::setEndsAt($state['ends_at']);
         ContestSettings::setUploadEndsAt($state['upload_ends_at'] ?? null);
+        ContestSettings::setAnnounceAt($state['announce_at'] ?? null);
 
         if (! empty($state['reglement'])) {
             ContestSettings::setReglement($state['reglement']);

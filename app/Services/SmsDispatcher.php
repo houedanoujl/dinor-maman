@@ -15,23 +15,57 @@ class SmsDispatcher
      */
     public function sendOnce(string $phone, string $type, string $message): bool
     {
-        $existing = SmsLog::where('phone', $phone)
-            ->where('type', $type)
-            ->where('status', SmsLog::STATUS_SENT)
-            ->first();
+        try {
+            $existing = SmsLog::where('phone', $phone)
+                ->where('type', $type)
+                ->where('status', SmsLog::STATUS_SENT)
+                ->first();
 
-        if ($existing) {
-            Log::info('SMS skip: déjà envoyé', [
+            if ($existing) {
+                Log::info('SMS skip: déjà envoyé', [
+                    'phone' => $phone,
+                    'type'  => $type,
+                    'sent_at' => $existing->sent_at?->toDateTimeString(),
+                ]);
+                return false;
+            }
+        } catch (\Throwable $e) {
+            Log::error('SmsLog lookup failed (table missing ?)', [
                 'phone' => $phone,
                 'type'  => $type,
-                'sent_at' => $existing->sent_at?->toDateTimeString(),
+                'error' => $e->getMessage(),
             ]);
-            return false;
+            // Continue : on tente quand même l'envoi sans idempotence.
         }
 
         try {
             $this->twilio->send($phone, $message);
+        } catch (\Throwable $e) {
+            Log::error('SMS échec', [
+                'phone' => $phone,
+                'type'  => $type,
+                'error' => $e->getMessage(),
+            ]);
 
+            try {
+                SmsLog::updateOrCreate(
+                    ['phone' => $phone, 'type' => $type],
+                    [
+                        'provider' => 'twilio',
+                        'status'   => SmsLog::STATUS_FAILED,
+                        'message'  => $message,
+                        'error'    => $e->getMessage(),
+                        'sent_at'  => null,
+                    ]
+                );
+            } catch (\Throwable $ignored) {
+                Log::warning('SmsLog write failed', ['error' => $ignored->getMessage()]);
+            }
+
+            return false;
+        }
+
+        try {
             SmsLog::updateOrCreate(
                 ['phone' => $phone, 'type' => $type],
                 [
@@ -42,28 +76,11 @@ class SmsDispatcher
                     'sent_at'  => now(),
                 ]
             );
-
-            return true;
-        } catch (\Throwable $e) {
-            Log::error('SMS échec', [
-                'phone' => $phone,
-                'type'  => $type,
-                'error' => $e->getMessage(),
-            ]);
-
-            SmsLog::updateOrCreate(
-                ['phone' => $phone, 'type' => $type],
-                [
-                    'provider' => 'twilio',
-                    'status'   => SmsLog::STATUS_FAILED,
-                    'message'  => $message,
-                    'error'    => $e->getMessage(),
-                    'sent_at'  => null,
-                ]
-            );
-
-            return false;
+        } catch (\Throwable $ignored) {
+            Log::warning('SmsLog write failed (sent)', ['error' => $ignored->getMessage()]);
         }
+
+        return true;
     }
 
     public function hasSent(string $phone, string $type): bool

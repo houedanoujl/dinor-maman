@@ -10,10 +10,12 @@ class ContestSettings
 {
     private const KEY = 'contest.ends_at';
     private const KEY_UPLOAD_ENDS = 'contest.upload_ends_at';
+    private const KEY_ANNOUNCE = 'contest.announce_at';
     private const KEY_REGLEMENT = 'contest.reglement';
     private const KEY_FAQ = 'contest.faq';
     private const CACHE_KEY = 'contest_ends_at';
     private const CACHE_KEY_UPLOAD_ENDS = 'contest_upload_ends_at';
+    private const CACHE_KEY_ANNOUNCE = 'contest_announce_at';
     private const CACHE_KEY_REGLEMENT = 'contest_reglement';
     private const CACHE_KEY_FAQ = 'contest_faq';
 
@@ -63,6 +65,37 @@ class ContestSettings
         });
 
         return $value ? Carbon::parse($value) : self::endsAt();
+    }
+
+    public static function announceAt(): ?Carbon
+    {
+        $value = Cache::remember(self::CACHE_KEY_ANNOUNCE, 3600, function () {
+            try {
+                $row = DB::table('settings')->where('key', self::KEY_ANNOUNCE)->value('value');
+            } catch (\Throwable $e) {
+                $row = null;
+            }
+
+            return $row ?: (string) config('contest.announce_at');
+        });
+
+        return $value ? Carbon::parse($value) : null;
+    }
+
+    public static function setAnnounceAt(string|Carbon|null $value): void
+    {
+        if ($value === null || $value === '') {
+            DB::table('settings')->where('key', self::KEY_ANNOUNCE)->delete();
+        } else {
+            $value = $value instanceof Carbon ? $value->toDateTimeString() : $value;
+
+            DB::table('settings')->updateOrInsert(
+                ['key' => self::KEY_ANNOUNCE],
+                ['value' => $value, 'updated_at' => now(), 'created_at' => now()]
+            );
+        }
+
+        Cache::forget(self::CACHE_KEY_ANNOUNCE);
     }
 
     public static function setUploadEndsAt(string|Carbon|null $value): void
