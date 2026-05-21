@@ -11,8 +11,9 @@
         <form wire:submit.prevent="save" class="rounded-2xl border border-dinor-gold/30 bg-dinor-cream/40 p-4">
             <p class="mb-3 text-sm font-semibold text-dinor-dark">Choisissez une nouvelle photo</p>
 
-            <input type="file" wire:model="photo" accept="image/jpeg,image/png,image/webp"
+            <input type="file" wire:model="photo" accept="image/jpeg,image/png"
                    class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-full file:border-0 file:bg-dinor-red file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-dinor-red/90" />
+            <p class="mt-2 text-xs text-gray-500">JPG ou PNG — max 4 Mo</p>
 
             @error('photo') <p class="mt-2 text-xs text-red-600">{{ $message }}</p> @enderror
 

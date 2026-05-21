@@ -8,6 +8,7 @@ use App\Notifications\ParticipationReceived;
 use App\Services\SmsNotifier;
 use App\Services\TwilioSms;
 use App\Support\ContestSettings;
+use App\Support\ImageSanitizer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -42,7 +43,7 @@ class ContestForm extends Component
     #[Validate('nullable|email|max:150')]
     public string $email = '';
 
-    #[Validate('required|image|mimes:jpeg,png,webp|max:5120')]
+    #[Validate('required|image|mimes:jpeg,jpg,png|mimetypes:image/jpeg,image/png|max:4096')]
     public $photo;
 
     #[Validate('nullable|string|max:500')]
@@ -141,8 +142,9 @@ class ContestForm extends Component
                 Auth::user()->update(['role' => User::ROLE_PARTICIPANT]);
             }
 
+            $extension = ImageSanitizer::sanitize($this->photo->getRealPath());
             $participant->addMedia($this->photo->getRealPath())
-                ->usingFileName(Str::uuid() . '.' . $this->safePhotoExtension())
+                ->usingFileName(Str::uuid() . '.' . $extension)
                 ->toMediaCollection('photo');
 
             return $participant;
@@ -275,6 +277,6 @@ class ContestForm extends Component
     protected function safePhotoExtension(): string
     {
         $extension = strtolower((string) $this->photo->extension());
-        return in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true) ? $extension : 'jpg';
+        return in_array($extension, ['jpg', 'jpeg', 'png'], true) ? $extension : 'jpg';
     }
 }

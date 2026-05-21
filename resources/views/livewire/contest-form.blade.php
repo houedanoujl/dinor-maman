@@ -172,10 +172,10 @@
                         </svg>
                         <div>
                             <p class="text-sm font-semibold text-dinor-dark">Cliquez pour choisir une photo</p>
-                            <p class="mt-1 text-xs text-gray-400">JPG, PNG ou WebP — max 10 Mo</p>
+                            <p class="mt-1 text-xs text-gray-400">JPG ou PNG — max 4 Mo</p>
                         </div>
                         <input id="photo-input" type="file" wire:model="photo"
-                               accept="image/jpeg,image/png,image/webp"
+                               accept="image/jpeg,image/png"
                                class="sr-only" />
                     </label>
                 @endif

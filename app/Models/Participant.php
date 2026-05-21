@@ -68,7 +68,7 @@ class Participant extends Model implements HasMedia
     {
         $this->addMediaCollection('photo')
             ->singleFile()
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+            ->acceptsMimeTypes(['image/jpeg', 'image/png']);
     }
 
     public function registerMediaConversions(?Media $media = null): void

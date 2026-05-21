@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Participant;
 use App\Support\ContestSettings;
+use App\Support\ImageSanitizer;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
@@ -16,7 +17,7 @@ class PhotoReplace extends Component
 
     public Participant $participant;
 
-    #[Validate('required|image|mimes:jpeg,png,webp|max:5120')]
+    #[Validate('required|image|mimes:jpeg,jpg,png|mimetypes:image/jpeg,image/png|max:4096')]
     public $photo = null;
 
     public bool $editing = false;
@@ -62,8 +63,7 @@ class PhotoReplace extends Component
         // Supprime l'ancienne photo et ajoute la nouvelle
         $this->participant->clearMediaCollection('photo');
 
-        $extension = strtolower((string) $this->photo->extension());
-        $extension = in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true) ? $extension : 'jpg';
+        $extension = ImageSanitizer::sanitize($this->photo->getRealPath());
 
         $this->participant->addMedia($this->photo->getRealPath())
             ->usingFileName(Str::uuid() . '.' . $extension)
