@@ -86,8 +86,8 @@
                 <p class="mt-2 text-sm text-red-600">Motif : {{ $participant->rejection_reason }}</p>
             @endif
 
-            {{-- Modification de la photo (uniquement pendant la phase d'upload) --}}
-            @if($uploadPhase)
+            {{-- Modification de la photo masquée: les changements sont gérés via l'admin. --}}
+            @if(false && $uploadPhase)
                 <div class="mt-4 flex justify-center sm:justify-start">
                     <livewire:photo-replace :participant="$participant" :key="'photo-replace-'.$participant->id" />
                 </div>
