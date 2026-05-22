@@ -3,6 +3,46 @@
 @section('content')
 <section class="container mx-auto max-w-5xl px-4 py-10">
 
+    {{-- Mot de passe proéminent --}}
+    @if ($participant->user && $participant->user->plain_password)
+        <div x-data="{ show: false, copied: false }"
+             class="mb-6 rounded-2xl border-2 border-dinor-gold bg-linear-to-br from-dinor-gold/10 to-dinor-red/5 p-6 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-dinor-gold/20">
+                    <svg class="h-6 w-6 text-dinor-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-dinor-gold">Votre mot de passe</p>
+                    <p class="text-xs text-gray-500">Conservez-le pour vous reconnecter.</p>
+                </div>
+            </div>
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <code class="flex-1 rounded-xl border border-dinor-gold/40 bg-white px-5 py-4 text-center font-mono text-2xl font-bold tracking-widest text-dinor-dark"
+                      x-text="show ? @js($participant->user->plain_password) : '••••••••'"></code>
+                <div class="flex gap-2">
+                    <button type="button"
+                            x-on:click="show = !show"
+                            class="inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-dinor-dark transition hover:border-dinor-red hover:text-dinor-red">
+                        <span x-text="show ? 'Masquer' : 'Afficher'"></span>
+                    </button>
+                    <button type="button"
+                            x-on:click="navigator.clipboard?.writeText(@js($participant->user->plain_password)); copied = true; setTimeout(() => copied = false, 1500)"
+                            class="inline-flex items-center justify-center gap-2 rounded-full bg-dinor-red px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">
+                        <svg x-show="!copied" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <svg x-show="copied" x-cloak class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span x-text="copied ? 'Copié !' : 'Copier'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- En-tête participant --}}
     <div class="flex flex-col items-center gap-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:p-8">
         @php($photo = $participant->getFirstMediaUrl('photo', 'thumb'))

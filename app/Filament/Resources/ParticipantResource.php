@@ -130,12 +130,12 @@ class ParticipantResource extends Resource
                     ->label('IP inscription')
                     ->copyable()
                     ->placeholder('—')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('user.last_login_ip')
                     ->label('IP dernière connexion')
                     ->copyable()
                     ->placeholder('—')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('anecdote')
                     ->label('Anecdote')
                     ->limit(60)
@@ -158,8 +158,9 @@ class ParticipantResource extends Resource
                         ]);
 
                         if ($state) {
-                            // Régénère un dashboard_token plaintext pour le mail et le SMS.
-                            $record->regenerateDashboardToken();
+                            // Pas de régénération du dashboard_token: invaliderait la session
+                            // active du participant. Le lien dashboard est accessible via
+                            // /espace (Auth-based) ou via /connexion (renvoi SMS).
 
                             if ($record->email) {
                                 Notification::route('mail', $record->email)

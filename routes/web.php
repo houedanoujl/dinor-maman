@@ -128,18 +128,7 @@ Route::get('/profil/{participant}', function (Participant $participant) {
     ]);
 })->middleware('throttle:120,1')->name('participant.show');
 
-Route::get('/mon-espace/{token}', function (string $token) {
-    $participant = Participant::findByDashboardToken($token);
-    abort_if(! $participant, 404);
-
-    // Mémorise le participant en session pour afficher son menu utilisateur
-    session(['participant_token' => $token]);
-
-    // Auto-login du User associé pour permettre le vote direct depuis le dashboard / la galerie.
-    if ($participant->user_id && (! Auth::check() || Auth::id() !== $participant->user_id)) {
-        Auth::loginUsingId($participant->user_id, true);
-    }
-
+$renderParticipantDashboard = function (Participant $participant) {
     // Classement (uniquement si approuvé)
     $rank = null;
     $totalApproved = Participant::approved()->count();
@@ -154,7 +143,6 @@ Route::get('/mon-espace/{token}', function (string $token) {
             })->count() + 1;
     }
 
-    // Histogramme: votes par jour sur les 14 derniers jours
     $start = now()->subDays(13)->startOfDay();
     $rawCounts = $participant->votes()
         ->where('created_at', '>=', $start)
@@ -186,7 +174,65 @@ Route::get('/mon-espace/{token}', function (string $token) {
             : null,
         'title' => 'Mon espace — ' . $participant->full_name,
     ]);
+};
+
+Route::get('/mon-espace/{token}', function (string $token) use ($renderParticipantDashboard) {
+    $participant = Participant::findByDashboardToken($token);
+    abort_if(! $participant, 404);
+
+    session(['participant_token' => $token]);
+
+    if ($participant->user_id && (! Auth::check() || Auth::id() !== $participant->user_id)) {
+        Auth::loginUsingId($participant->user_id, true);
+    }
+
+    return $renderParticipantDashboard($participant);
 })->middleware('throttle:30,1')->name('participant.dashboard');
+
+// Espace personnel - Auth ou session participant_token.
+Route::get('/espace', function () use ($renderParticipantDashboard) {
+    // Cas 1: Auth set
+    if (Auth::check()) {
+        $user = Auth::user();
+
+        if ($user->isAdmin()) {
+            return redirect('/admin');
+        }
+
+        $participant = Participant::where('user_id', $user->id)->first();
+        if ($participant) {
+            return $renderParticipantDashboard($participant);
+        }
+
+        // Espace votant
+        $votes = \App\Models\Vote::where('user_id', $user->id)
+            ->with('participant.media')
+            ->latest()
+            ->limit(20)
+            ->get();
+
+        return view('voter-dashboard', [
+            'user'  => $user,
+            'votes' => $votes,
+            'title' => 'Mon espace — ' . $user->name,
+        ]);
+    }
+
+    // Cas 2: fallback via session participant_token (lien SMS sans Auth)
+    $token = session('participant_token');
+    if ($token) {
+        $participant = Participant::findByDashboardToken($token);
+        if ($participant) {
+            if ($participant->user_id) {
+                Auth::loginUsingId($participant->user_id, true);
+            }
+            return $renderParticipantDashboard($participant);
+        }
+        session()->forget('participant_token');
+    }
+
+    return redirect()->route('login')->with('status', 'Connectez-vous pour accéder à votre espace.');
+})->middleware('throttle:30,1')->name('account');
 
 Route::post('/deconnexion', function () {
     session()->forget('participant_token');

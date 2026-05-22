@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\SmsLog;
 use App\Services\SmsDispatcher;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -147,18 +148,18 @@ class UserResource extends Resource
                     ->label('IP inscription')
                     ->copyable()
                     ->placeholder('—')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('last_login_ip')
                     ->label('IP dernière connexion')
                     ->copyable()
                     ->placeholder('—')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('last_login_at')
                     ->label('Dernière connexion')
                     ->dateTime('d/m/Y H:i')
                     ->placeholder('—')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('votes_count')
                     ->label('Votes')
                     ->badge()
@@ -183,14 +184,15 @@ class UserResource extends Resource
                     ]),
             ])
             ->recordActions([
-                EditAction::make(),
-                Action::make('resendPassword')
-                    ->label('Renvoyer mot de passe SMS')
+                Action::make('resendPasswordQuick')
+                    ->label('Renvoyer SMS')
                     ->icon('heroicon-o-chat-bubble-bottom-center-text')
                     ->color('warning')
+                    ->button()
+                    ->size('xs')
                     ->requiresConfirmation()
                     ->modalHeading('Renvoyer le mot de passe par SMS ?')
-                    ->modalDescription(fn (User $record) => 'Génère un nouveau mot de passe (8 chiffres) et l\'envoie au ' . ($record->phone ?: 'numéro manquant') . '. L\'ancien mot de passe sera invalidé.')
+                    ->modalDescription(fn (User $record) => 'Génère un nouveau mot de passe (8 chiffres) et l\'envoie au ' . ($record->phone ?: 'numéro manquant') . '. L\'ancien sera invalidé.')
                     ->modalSubmitActionLabel('Renvoyer')
                     ->visible(fn (User $record) => filled($record->phone) && ! $record->isAdmin())
                     ->action(function (User $record) {
@@ -206,22 +208,16 @@ class UserResource extends Resource
                         [$ok, $err] = app(SmsDispatcher::class)->sendNow($record->phone, SmsLog::TYPE_CREDENTIALS, $message);
 
                         if ($ok) {
-                            FilamentNotification::make()
-                                ->success()
-                                ->title('SMS envoyé')
-                                ->body("Nouveau mot de passe envoyé au {$record->phone}.")
-                                ->send();
+                            FilamentNotification::make()->success()->title('SMS envoyé')->body("Nouveau mot de passe envoyé au {$record->phone}.")->send();
                         } else {
-                            FilamentNotification::make()
-                                ->danger()
-                                ->title('Échec envoi SMS')
-                                ->body($err ?: 'Erreur inconnue. Mot de passe régénéré, communiquez-le manuellement.')
-                                ->persistent()
-                                ->send();
+                            FilamentNotification::make()->danger()->title('Échec envoi SMS')->body($err ?: 'Erreur inconnue. Mot de passe régénéré, communiquez-le manuellement.')->persistent()->send();
                         }
                     }),
-                DeleteAction::make()
-                    ->visible(fn (User $record) => $record->id !== auth()->id()),
+                ActionGroup::make([
+                    EditAction::make(),
+                    DeleteAction::make()
+                        ->visible(fn (User $record) => $record->id !== auth()->id()),
+                ])->label('Plus')->icon('heroicon-m-ellipsis-vertical'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
