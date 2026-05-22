@@ -2,13 +2,15 @@
 
 namespace App\Livewire;
 
+use App\Livewire\VoteButton;
 use App\Models\Participant;
 use App\Models\Vote;
 use App\Support\ContestSettings;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -54,39 +56,50 @@ class GalleryView extends Component
         return now()->greaterThan(ContestSettings::endsAt());
     }
 
+    protected function voterToken(): string
+    {
+        $cookie = (string) request()->cookie(VoteButton::COOKIE_NAME, '');
+        if ($cookie !== '') {
+            return $cookie;
+        }
+        $token = (string) Str::ulid() . bin2hex(random_bytes(8));
+        Cookie::queue(VoteButton::COOKIE_NAME, $token, VoteButton::COOKIE_MINUTES);
+        return $token;
+    }
+
     protected function votedIds(): Collection
     {
-        if (! Auth::check()) {
+        $token = (string) request()->cookie(VoteButton::COOKIE_NAME, '');
+        if ($token === '') {
             return collect();
         }
-
-        return Vote::where('user_id', Auth::id())->pluck('participant_id');
+        return Vote::where('voter_token', $token)->pluck('participant_id');
     }
 
     public function vote(int $participantId)
     {
-        if (! Auth::check()) {
-            session(['url.intended' => url()->current()]);
-            return redirect()->route('login')
-                ->with('status', 'Connectez-vous pour voter.');
-        }
-
-        if (! Auth::user()->canVote()) {
-            $this->dispatch('toast', type: 'error', message: 'Votre compte ne peut pas voter.');
-            return;
-        }
-
         if ($this->contestEnded()) {
             $this->dispatch('toast', type: 'error', message: 'Le concours est terminé. Les votes sont clôturés.');
             return;
         }
 
-        $userKey = 'vote:user:' . Auth::id();
-        if (RateLimiter::tooManyAttempts($userKey, 30)) {
-            $this->dispatch('toast', type: 'error', message: 'Trop de votes en peu de temps. Réessayez dans une minute.');
+        $token = $this->voterToken();
+        if ($token === '') {
+            $this->dispatch('toast', type: 'error', message: 'Impossible d\'enregistrer votre vote. Activez les cookies puis réessayez.');
             return;
         }
-        RateLimiter::hit($userKey, 60);
+
+        $ipKey = 'vote:ip:' . request()->ip();
+        if (RateLimiter::tooManyAttempts($ipKey, 60)) {
+            $this->dispatch('toast', type: 'error', message: 'Trop de tentatives. Réessayez dans une minute.');
+            return;
+        }
+        RateLimiter::hit($ipKey, 60);
+
+        if (Vote::where('voter_token', $token)->exists()) {
+            $this->dispatch('toast', type: 'warning', message: 'Vous avez déjà voté pour un participant. Un seul vote par concours.');
+            return;
+        }
 
         $participant = Participant::approved()->find($participantId);
         if (! $participant) {
@@ -95,10 +108,10 @@ class GalleryView extends Component
         }
 
         try {
-            DB::transaction(function () use ($participantId) {
+            DB::transaction(function () use ($participantId, $token) {
                 Vote::create([
                     'participant_id' => $participantId,
-                    'user_id'        => Auth::id(),
+                    'voter_token'    => $token,
                     'ip_address'     => request()->ip(),
                     'session_id'     => hash('sha256', session()->getId()),
                     'user_agent'     => substr((string) request()->userAgent(), 0, 255),
@@ -112,7 +125,7 @@ class GalleryView extends Component
             if ($e->getCode() !== '23000') {
                 throw $e;
             }
-            $this->dispatch('toast', type: 'warning', message: 'Vous avez déjà voté pour cette photo.');
+            $this->dispatch('toast', type: 'warning', message: 'Vote déjà enregistré.');
         }
     }
 
@@ -136,6 +149,7 @@ class GalleryView extends Component
 
         $participants = $query->paginate(24);
         $votedIds = $this->votedIds()->flip();
+        $hasVotedAnywhere = $votedIds->isNotEmpty();
 
         $cityTags = Participant::approved()
             ->select('city')
@@ -148,6 +162,7 @@ class GalleryView extends Component
             'participants' => $participants,
             'cityTags' => $cityTags,
             'votedIds' => $votedIds,
+            'hasVotedAnywhere' => $hasVotedAnywhere,
             'contestEndsAt' => ContestSettings::endsAt(),
             'contestEnded' => $this->contestEnded(),
         ]);

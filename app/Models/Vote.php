@@ -12,7 +12,7 @@ class Vote extends Model
 
     protected $fillable = [
         'participant_id',
-        'user_id',
+        'voter_token',
         'ip_address',
         'session_id',
         'device_fingerprint',
@@ -22,10 +22,5 @@ class Vote extends Model
     public function participant(): BelongsTo
     {
         return $this->belongsTo(Participant::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 }

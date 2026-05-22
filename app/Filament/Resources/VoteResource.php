@@ -48,12 +48,10 @@ class VoteResource extends Resource
                     ->label('Date')
                     ->dateTime('d/m/Y H:i:s')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Votant')
-                    ->searchable()
-                    ->placeholder('Anonyme'),
-                Tables\Columns\TextColumn::make('user.phone')
-                    ->label('Téléphone')
+                Tables\Columns\TextColumn::make('voter_token')
+                    ->label('Token votant')
+                    ->formatStateUsing(fn ($state) => $state ? substr($state, 0, 10) . '…' : '—')
+                    ->tooltip(fn ($record) => $record->voter_token)
                     ->searchable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('participant.full_name')
@@ -104,11 +102,11 @@ class VoteResource extends Resource
                         $data['ip'] ?? null,
                         fn ($q, $v) => $q->where('ip_address', 'like', "%{$v}%")
                     )),
-                Filter::make('phone')
-                    ->schema([Forms\Components\TextInput::make('phone')->label('Téléphone votant')])
+                Filter::make('token')
+                    ->schema([Forms\Components\TextInput::make('token')->label('Token votant')])
                     ->query(fn (Builder $q, array $data) => $q->when(
-                        $data['phone'] ?? null,
-                        fn ($q, $v) => $q->whereHas('user', fn ($q2) => $q2->where('phone', 'like', "%{$v}%"))
+                        $data['token'] ?? null,
+                        fn ($q, $v) => $q->where('voter_token', 'like', "%{$v}%")
                     )),
                 Filter::make('date')
                     ->schema([

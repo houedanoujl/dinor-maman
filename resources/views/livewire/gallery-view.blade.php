@@ -109,15 +109,15 @@
                                     {{ $p->vote_count }}
                                 </span>
                                 <button wire:click="vote({{ $p->id }})"
-                                        @if($hasVoted || $contestEnded) disabled @endif
+                                        @if($hasVoted || $hasVotedAnywhere || $contestEnded) disabled @endif
                                         type="button"
                                         class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold shadow-md transition
                                                {{ $hasVoted
                                                    ? 'bg-dinor-red text-white'
-                                                   : ($contestEnded
+                                                   : (($contestEnded || $hasVotedAnywhere)
                                                         ? 'bg-white/20 text-white/50'
                                                         : 'bg-white text-dinor-dark hover:bg-dinor-red hover:text-white') }}">
-                                    {{ $hasVoted ? 'Voté' : 'Voter' }}
+                                    {{ $hasVoted ? 'Voté' : ($hasVotedAnywhere ? 'Déjà voté' : 'Voter') }}
                                 </button>
                             </div>
                         </div>

@@ -68,11 +68,6 @@ class User extends Authenticatable implements FilamentUser
         return in_array($this->role, [self::ROLE_PARTICIPANT, self::ROLE_ADMIN], true);
     }
 
-    public function votes(): HasMany
-    {
-        return $this->hasMany(Vote::class);
-    }
-
     public function participant(): HasOne
     {
         return $this->hasOne(Participant::class);

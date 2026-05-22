@@ -71,7 +71,7 @@ class ContestContentSeeder extends Seeder
 <p>DINOR CI se réserve le droit de modifier les dates du jeu ou d'annuler l'opération en cas de force majeure ou de circonstances indépendantes de sa volonté.</p>
 
 <h2>Article 7 – Votes</h2>
-<p>Pour voter, chaque visiteur doit créer un compte sur la plateforme en renseignant son numéro de téléphone. Un mot de passe lui est alors envoyé par SMS. Chaque utilisateur ne peut voter qu'une seule fois par participant. Les votes sont également contrôlés par adresse IP, session et tout autre dispositif technique mis en place par l'Organisateur afin de prévenir les abus.</p>
+<p>Les votes sont ouverts à tous, sans création de compte ni numéro de téléphone. <strong>Chaque visiteur peut voter une seule fois</strong> pour un seul participant sur toute la durée du concours. Le vote est anonyme et contrôlé par cookie de navigation, adresse IP, session et tout autre dispositif technique mis en place par l'Organisateur afin de prévenir les abus.</p>
 <p>Les votes automatisés, frauduleux ou obtenus par des moyens non conformes entraîneront la disqualification du participant concerné.</p>
 
 <h2>Article 8 – Désignation des gagnants</h2>
@@ -151,9 +151,9 @@ HTML;
             ['q' => 'Comment les gagnants sont-ils désignés ?',
              'a' => "Les gagnants seront les 3 participants ayant obtenu le plus grand nombre de votes valides (likes) à la clôture du concours Jeudi 28 Mai 2026 à 12h00."],
             ['q' => 'Qui peut voter ?',
-             'a' => "Pour voter, il faut créer un compte avec son numéro de téléphone. Un mot de passe est envoyé gratuitement par SMS et permet de se connecter à la plateforme."],
+             'a' => "Tout le monde peut voter, sans création de compte ni numéro de téléphone. Le vote est anonyme."],
             ['q' => 'Peut-on voter plusieurs fois ?',
-             'a' => "Non. Chaque compte ne peut voter qu'une seule fois par participant. Les votes sont également contrôlés par adresse IP et session pour prévenir les abus."],
+             'a' => "Non. Chaque visiteur ne peut voter qu'une seule fois pour un seul participant sur toute la durée du concours. Le contrôle se fait par cookie, IP et session pour prévenir les abus."],
             ['q' => 'Les votes frauduleux sont-ils autorisés ?',
              'a' => "Non. Les votes automatisés ou frauduleux peuvent entraîner la disqualification du participant concerné."],
             ['q' => 'Que se passe-t-il en cas d\'égalité ?',
