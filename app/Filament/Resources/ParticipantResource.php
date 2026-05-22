@@ -4,8 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ParticipantResource\Pages;
 use App\Models\Participant;
+use App\Models\SmsLog;
 use App\Notifications\ParticipationApproved;
 use App\Notifications\ParticipationRejected;
+use App\Services\SmsDispatcher;
 use App\Services\SmsNotifier;
 use Filament\Actions;
 use Filament\Forms;
@@ -112,7 +114,9 @@ class ParticipantResource extends Resource
                 Tables\Columns\TextColumn::make('city')
                     ->label('Ville')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->city),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Téléphone')
                     ->searchable(),
@@ -192,7 +196,50 @@ class ParticipantResource extends Resource
                     ->searchable(),
             ])
             ->recordActions([
+                Actions\ActionGroup::make([
                 Actions\EditAction::make(),
+                Actions\Action::make('resendPassword')
+                    ->label('Renvoyer mot de passe SMS')
+                    ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Renvoyer le mot de passe par SMS ?')
+                    ->modalDescription(fn ($record) => 'Génère un nouveau mot de passe (8 chiffres) et l\'envoie au ' . $record->phone . '. L\'ancien sera invalidé.')
+                    ->modalSubmitActionLabel('Renvoyer')
+                    ->visible(fn ($record) => filled($record->phone) && $record->user_id)
+                    ->action(function ($record) {
+                        $user = $record->user;
+                        if (! $user) {
+                            FilamentNotification::make()->danger()->title('Aucun compte associé')->send();
+                            return;
+                        }
+
+                        $password = str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+                        $user->forceFill([
+                            'password' => \Illuminate\Support\Facades\Hash::make($password),
+                            'plain_password' => $password,
+                        ])->save();
+
+                        $loginUrl = route('login');
+                        $message = "DINOR. Nouveau mot de passe: {$password}. Connectez-vous avec votre numero {$user->phone} sur {$loginUrl}.";
+
+                        [$ok, $err] = app(SmsDispatcher::class)->sendNow($user->phone, SmsLog::TYPE_CREDENTIALS, $message);
+
+                        if ($ok) {
+                            FilamentNotification::make()
+                                ->success()
+                                ->title('SMS envoyé')
+                                ->body("Nouveau mot de passe envoyé au {$user->phone}.")
+                                ->send();
+                        } else {
+                            FilamentNotification::make()
+                                ->danger()
+                                ->title('Échec envoi SMS')
+                                ->body($err ?: 'Erreur inconnue. Mot de passe régénéré, communiquez-le manuellement.')
+                                ->persistent()
+                                ->send();
+                        }
+                    }),
                 Actions\Action::make('reject')
                     ->label('Rejeter')
                     ->color('danger')
@@ -227,6 +274,7 @@ class ParticipantResource extends Resource
                             ->body($record->email ? 'Le participant a été notifié par email.' : 'Aucun email — le participant n\'a pas été notifié.')
                             ->send();
                     }),
+                ])->label('Actions')->icon('heroicon-m-ellipsis-vertical')->button(),
             ])
             ->headerActions([
                 Actions\Action::make('exportRanking')

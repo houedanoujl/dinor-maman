@@ -90,4 +90,47 @@ class SmsDispatcher
             ->where('status', SmsLog::STATUS_SENT)
             ->exists();
     }
+
+    /**
+     * Envoie un SMS sans idempotence (force). Retourne [success, error].
+     */
+    public function sendNow(string $phone, string $type, string $message): array
+    {
+        try {
+            $this->twilio->send($phone, $message);
+        } catch (\Throwable $e) {
+            $err = $e->getMessage();
+            Log::error('SMS échec (sendNow)', ['phone' => $phone, 'type' => $type, 'error' => $err]);
+
+            try {
+                SmsLog::updateOrCreate(
+                    ['phone' => $phone, 'type' => $type],
+                    [
+                        'provider' => 'twilio',
+                        'status'   => SmsLog::STATUS_FAILED,
+                        'message'  => $message,
+                        'error'    => $err,
+                        'sent_at'  => null,
+                    ]
+                );
+            } catch (\Throwable $ignored) {}
+
+            return [false, $err];
+        }
+
+        try {
+            SmsLog::updateOrCreate(
+                ['phone' => $phone, 'type' => $type],
+                [
+                    'provider' => 'twilio',
+                    'status'   => SmsLog::STATUS_SENT,
+                    'message'  => $message,
+                    'error'    => null,
+                    'sent_at'  => now(),
+                ]
+            );
+        } catch (\Throwable $ignored) {}
+
+        return [true, null];
+    }
 }

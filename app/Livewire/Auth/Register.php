@@ -175,13 +175,13 @@ class Register extends Component
 
         Auth::login($user, true);
 
+        $msg = 'Bienvenue ! Votre mot de passe a été envoyé par SMS. Vous pouvez aussi le retrouver et le copier depuis votre menu personnel (en haut à droite).';
+
         if (session()->has('url.intended')) {
-            return redirect()->intended(route('contest.gallery'))
-                ->with('status', 'Bienvenue ! Votre mot de passe a été envoyé par SMS.');
+            return redirect()->intended(route('contest.gallery'))->with('status', $msg);
         }
 
-        return redirect()->route('contest.gallery')
-            ->with('status', 'Bienvenue ! Votre mot de passe a été envoyé par SMS.');
+        return redirect()->route('contest.gallery')->with('status', $msg);
     }
 
     protected function submitParticipant()

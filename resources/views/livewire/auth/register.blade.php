@@ -61,6 +61,16 @@
                 Votre photo est en attente de validation par notre équipe.<br>
                 Vous serez notifié(e) dès qu'elle sera approuvée.
             </p>
+            <div class="mx-auto mt-5 max-w-md rounded-xl border border-dinor-gold/30 bg-dinor-gold/5 p-4 text-left">
+                <p class="flex items-start gap-2 text-sm text-dinor-dark">
+                    <svg class="mt-0.5 h-5 w-5 shrink-0 text-dinor-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>
+                        <strong>Astuce :</strong> votre mot de passe SMS est aussi accessible et copiable depuis votre <strong>espace personnel</strong> (menu en haut à droite → section « Mot de passe »).
+                    </span>
+                </p>
+            </div>
             <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <a href="{{ route('contest.gallery') }}" class="inline-flex items-center justify-center rounded-full bg-dinor-red px-6 py-2.5 font-semibold text-white shadow-sm transition hover:bg-dinor-red/90">Voir la galerie</a>
             </div>

@@ -4,6 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
+use App\Models\SmsLog;
+use App\Services\SmsDispatcher;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -181,6 +184,42 @@ class UserResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('resendPassword')
+                    ->label('Renvoyer mot de passe SMS')
+                    ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Renvoyer le mot de passe par SMS ?')
+                    ->modalDescription(fn (User $record) => 'Génère un nouveau mot de passe (8 chiffres) et l\'envoie au ' . ($record->phone ?: 'numéro manquant') . '. L\'ancien mot de passe sera invalidé.')
+                    ->modalSubmitActionLabel('Renvoyer')
+                    ->visible(fn (User $record) => filled($record->phone) && ! $record->isAdmin())
+                    ->action(function (User $record) {
+                        $password = str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+                        $record->forceFill([
+                            'password' => \Illuminate\Support\Facades\Hash::make($password),
+                            'plain_password' => $password,
+                        ])->save();
+
+                        $loginUrl = route('login');
+                        $message = "DINOR. Nouveau mot de passe: {$password}. Connectez-vous avec votre numero {$record->phone} sur {$loginUrl}.";
+
+                        [$ok, $err] = app(SmsDispatcher::class)->sendNow($record->phone, SmsLog::TYPE_CREDENTIALS, $message);
+
+                        if ($ok) {
+                            FilamentNotification::make()
+                                ->success()
+                                ->title('SMS envoyé')
+                                ->body("Nouveau mot de passe envoyé au {$record->phone}.")
+                                ->send();
+                        } else {
+                            FilamentNotification::make()
+                                ->danger()
+                                ->title('Échec envoi SMS')
+                                ->body($err ?: 'Erreur inconnue. Mot de passe régénéré, communiquez-le manuellement.')
+                                ->persistent()
+                                ->send();
+                        }
+                    }),
                 DeleteAction::make()
                     ->visible(fn (User $record) => $record->id !== auth()->id()),
             ])

@@ -48,7 +48,26 @@
             <span wire:loading wire:target="submit">Connexion…</span>
         </button>
 
+        @if ($resendStatus)
+            <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {{ $resendStatus }}
+            </div>
+        @endif
+        @if ($resendError)
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {{ $resendError }}
+            </div>
+        @endif
+
         <div class="flex flex-col gap-2 text-center text-sm text-gray-500">
+            <button type="button"
+                    wire:click="resendPassword"
+                    wire:loading.attr="disabled"
+                    wire:target="resendPassword"
+                    class="font-semibold text-dinor-red hover:underline disabled:opacity-50">
+                <span wire:loading.remove wire:target="resendPassword">Mot de passe oublié ? Renvoyer par SMS</span>
+                <span wire:loading wire:target="resendPassword">Envoi…</span>
+            </button>
             <span>
                 Pas encore inscrit ?
                 <a href="{{ route('register') }}" class="font-semibold text-dinor-red hover:underline">Créer un compte</a>
