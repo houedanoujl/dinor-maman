@@ -16,13 +16,13 @@ Route::get('/', function () {
 
     $topParticipants = (clone $approved)
         ->orderByDesc('vote_count')
-        ->orderByDesc('approved_at')
+        ->orderBy('created_at', 'asc')
         ->take(3)
         ->get();
 
     $collage = (clone $approved)
         ->whereNotIn('id', $topParticipants->pluck('id'))
-        ->orderByDesc('approved_at')
+        ->orderByDesc('created_at')
         ->take(6)
         ->get();
 
@@ -71,20 +71,12 @@ Route::get('/galerie', GalleryView::class)
 Route::get('/profil/{participant}', function (Participant $participant) {
     abort_unless($participant->status === Participant::STATUS_APPROVED, 404);
 
-    // Guest arrivant via lien de partage → redirige vers inscription, retour auto après.
-    if (! Auth::check()) {
-        $ref = request()->integer('ref') ?: $participant->id;
-        session(['url.intended' => route('participant.show', $participant) . '?ref=' . $ref]);
-        return redirect()->route('register')
-            ->with('status', 'Inscrivez-vous pour voter pour ' . $participant->first_name . ' et découvrir les autres participants.');
-    }
-
     $rank = Participant::approved()
         ->where(function ($q) use ($participant) {
             $q->where('vote_count', '>', $participant->vote_count)
               ->orWhere(function ($q2) use ($participant) {
                   $q2->where('vote_count', $participant->vote_count)
-                     ->where('approved_at', '>', $participant->approved_at);
+                     ->where('created_at', '<', $participant->created_at);
               });
         })->count() + 1;
 
@@ -138,7 +130,7 @@ $renderParticipantDashboard = function (Participant $participant) {
                 $q->where('vote_count', '>', $participant->vote_count)
                   ->orWhere(function ($q2) use ($participant) {
                       $q2->where('vote_count', $participant->vote_count)
-                         ->where('approved_at', '<', $participant->approved_at);
+                         ->where('created_at', '<', $participant->created_at);
                   });
             })->count() + 1;
     }
@@ -204,18 +196,8 @@ Route::get('/espace', function () use ($renderParticipantDashboard) {
             return $renderParticipantDashboard($participant);
         }
 
-        // Espace votant
-        $votes = \App\Models\Vote::where('user_id', $user->id)
-            ->with('participant.media')
-            ->latest()
-            ->limit(20)
-            ->get();
-
-        return view('voter-dashboard', [
-            'user'  => $user,
-            'votes' => $votes,
-            'title' => 'Mon espace — ' . $user->name,
-        ]);
+        // User authentifié sans participation: redirect home (votes anonymes)
+        return redirect()->route('home');
     }
 
     // Cas 2: fallback via session participant_token (lien SMS sans Auth)

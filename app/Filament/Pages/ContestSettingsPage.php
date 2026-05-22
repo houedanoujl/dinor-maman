@@ -6,6 +6,7 @@ use App\Models\Participant;
 use App\Models\SmsLog;
 use App\Models\User;
 use App\Models\Vote;
+use App\Models\Winner;
 use App\Support\ContestSettings;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -132,6 +133,61 @@ class ContestSettingsPage extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('announceWinners')
+                ->label('Figer le top 3')
+                ->icon('heroicon-o-trophy')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Figer le top 3 des gagnants ?')
+                ->modalDescription(function () {
+                    $cycle = ContestSettings::endsAt()->format('Y-m');
+                    $exists = Winner::where('contest_cycle', $cycle)->exists();
+                    if ($exists) {
+                        return "Top 3 déjà figé pour le cycle {$cycle}. Vous devez d'abord supprimer les gagnants actuels pour re-figer.";
+                    }
+                    return 'Crée un snapshot des 3 participants avec le plus de votes. Aucun SMS ni email envoyé — l\'annonce officielle reste à publier manuellement par DINOR sur ses plateformes (Facebook, Instagram).';
+                })
+                ->modalSubmitActionLabel('Figer maintenant')
+                ->disabled(function () {
+                    $cycle = ContestSettings::endsAt()->format('Y-m');
+                    return Winner::where('contest_cycle', $cycle)->exists();
+                })
+                ->action(function () {
+                    $cycle = ContestSettings::endsAt()->format('Y-m');
+
+                    if (Winner::where('contest_cycle', $cycle)->exists()) {
+                        Notification::make()->warning()->title('Top 3 déjà figé')->body("Cycle {$cycle} déjà annoncé.")->send();
+                        return;
+                    }
+
+                    $top = Participant::approved()
+                        ->orderByDesc('vote_count')
+                        ->orderBy('created_at', 'asc')
+                        ->take(3)
+                        ->get();
+
+                    if ($top->isEmpty()) {
+                        Notification::make()->danger()->title('Aucun participant')->body('Aucun participant approuvé à figer.')->send();
+                        return;
+                    }
+
+                    foreach ($top as $index => $participant) {
+                        Winner::create([
+                            'participant_id' => $participant->id,
+                            'rank' => $index + 1,
+                            'vote_count_snapshot' => $participant->vote_count,
+                            'announced_at' => now(),
+                            'contest_cycle' => $cycle,
+                        ]);
+                    }
+
+                    Notification::make()
+                        ->success()
+                        ->title('Top 3 figé')
+                        ->body('Snapshot enregistré. Publiez maintenant l\'annonce sur les plateformes DINOR.')
+                        ->send();
+                }),
+
             Action::make('resetContestData')
                 ->label('Réinitialiser le concours')
                 ->icon('heroicon-o-trash')
@@ -246,7 +302,7 @@ class ContestSettingsPage extends Page
             ['q' => 'Combien de photos peut-on soumettre ?', 'a' => 'Chaque participant peut soumettre une seule photo. La participation est contrôlée par numéro de téléphone.'],
             ['q' => 'Comment les gagnants sont-ils désignés ?', 'a' => "Les gagnants seront les 3 participants ayant obtenu le plus grand nombre de votes valides à la clôture du concours."],
             ['q' => 'Qui peut voter ?', 'a' => 'Tout le monde peut voter, sans inscription.'],
-            ['q' => 'Peut-on voter plusieurs fois ?', 'a' => 'Chaque visiteur peut voter une seule fois par participant. Les votes sont contrôlés par adresse IP et session.'],
+            ['q' => 'Peut-on voter plusieurs fois ?', 'a' => 'Chaque visiteur peut voter une seule fois par participant, mais peut soutenir plusieurs participants différents.'],
             ['q' => 'Mes données personnelles seront-elles partagées ?', 'a' => 'Non. Les données collectées servent uniquement à la gestion du concours et aux notifications liées à la participation.'],
         ];
     }

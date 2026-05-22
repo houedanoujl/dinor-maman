@@ -8,7 +8,6 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -20,7 +19,6 @@ class User extends Authenticatable implements FilamentUser
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    public const ROLE_VOTER       = 'voter';
     public const ROLE_PARTICIPANT = 'participant';
     public const ROLE_ADMIN       = 'admin';
 
@@ -51,16 +49,6 @@ class User extends Authenticatable implements FilamentUser
     public function isParticipant(): bool
     {
         return $this->role === self::ROLE_PARTICIPANT;
-    }
-
-    public function isVoter(): bool
-    {
-        return $this->role === self::ROLE_VOTER;
-    }
-
-    public function canVote(): bool
-    {
-        return in_array($this->role, [self::ROLE_VOTER, self::ROLE_PARTICIPANT, self::ROLE_ADMIN], true);
     }
 
     public function canUpload(): bool

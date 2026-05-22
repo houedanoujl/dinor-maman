@@ -25,7 +25,6 @@ class ResetContestData extends Command
         $counts = [
             'votes'        => Vote::count(),
             'participants' => Participant::count(),
-            'voters'       => User::where('role', User::ROLE_VOTER)->count(),
             'participants_users' => User::where('role', User::ROLE_PARTICIPANT)->count(),
             'sms_logs'     => SmsLog::count(),
         ];

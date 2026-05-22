@@ -100,6 +100,14 @@ class ParticipantResource extends Resource
     {
         return $table
             ->defaultSort('vote_count', 'desc')
+            ->modifyQueryUsing(function ($query) {
+                // Tie-break: si tri par vote_count desc, photo soumise en premier prioritaire.
+                $orders = $query->getQuery()->orders ?? [];
+                $sortsByVote = collect($orders)->contains(fn ($o) => ($o['column'] ?? null) === 'vote_count');
+                if ($sortsByVote || empty($orders)) {
+                    $query->orderBy('created_at', 'asc');
+                }
+            })
             ->paginated([10, 25, 50, 100])
             ->defaultPaginationPageOption(25)
             ->columns([
@@ -146,6 +154,11 @@ class ParticipantResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('warning'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Soumis le')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->tooltip('Date de soumission — départage les égalités (la plus ancienne gagne).'),
                 Tables\Columns\ToggleColumn::make('approved_toggle')
                     ->label('Approuvé')
                     ->getStateUsing(fn ($record) => $record->status === Participant::STATUS_APPROVED)
@@ -286,10 +299,11 @@ class ParticipantResource extends Resource
 
                         return response()->streamDownload(function () {
                             $out = fopen('php://output', 'w');
-                            fputcsv($out, ['Rang', 'Prénom', 'Nom', 'Téléphone', 'Ville', 'Email', 'Votes']);
+                            fputcsv($out, ['Rang', 'Prénom', 'Nom', 'Téléphone', 'Ville', 'Email', 'Votes', 'Soumis le']);
 
                             Participant::approved()
                                 ->orderByDesc('vote_count')
+                                ->orderBy('created_at', 'asc')
                                 ->get()
                                 ->each(function ($p, $i) use ($out) {
                                     fputcsv($out, [
@@ -300,6 +314,7 @@ class ParticipantResource extends Resource
                                         self::csvCell($p->city),
                                         self::csvCell($p->email),
                                         $p->vote_count,
+                                        $p->created_at?->format('d/m/Y H:i'),
                                     ]);
                                 });
 

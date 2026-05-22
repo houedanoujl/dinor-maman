@@ -158,14 +158,6 @@
                     @endif
                 @endif
 
-                @if($authUser?->isVoter() && ! $userParticipant)
-                    <a href="{{ route('register', ['role' => 'participant']) }}"
-                       class="flex items-center gap-3 rounded-xl border-2 border-dinor-gold/40 bg-dinor-gold/5 px-4 py-3 font-semibold text-dinor-gold transition hover:bg-dinor-gold/10">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                        Devenir participant
-                    </a>
-                @endif
-
                 @if($authUser?->isAdmin())
                     <a href="/admin"
                        class="flex items-center gap-3 rounded-xl px-4 py-3 text-dinor-dark transition hover:bg-dinor-cream hover:text-dinor-red">

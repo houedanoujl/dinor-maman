@@ -29,11 +29,7 @@ class Register extends Component
 
     public string $step = 'form';
 
-    public string $role = User::ROLE_VOTER;
-
     public bool $consent = false;
-
-    public string $name = '';
 
     public string $first_name = '';
     public string $last_name = '';
@@ -46,10 +42,6 @@ class Register extends Component
 
     public function mount()
     {
-        if (request()->query('role') === User::ROLE_PARTICIPANT) {
-            $this->role = User::ROLE_PARTICIPANT;
-        }
-
         if (Auth::check()) {
             $u = Auth::user();
 
@@ -64,13 +56,6 @@ class Register extends Component
                 return redirect()->route('participant.dashboard', $plainToken);
             }
 
-            // Voter authed: reste voter sauf si demande explicite ?role=participant.
-            if ($u->isVoter() && request()->query('role') !== User::ROLE_PARTICIPANT) {
-                return redirect()->route('contest.gallery')
-                    ->with('status', 'Vous êtes déjà inscrit comme votant. Vous pouvez voter directement.');
-            }
-
-            $this->role = User::ROLE_PARTICIPANT;
             $this->phone = $u->phone ?? '';
             $names = explode(' ', $u->name, 2);
             $this->first_name = $names[0] ?? '';
@@ -81,18 +66,11 @@ class Register extends Component
     protected function rules(): array
     {
         $shared = [
-            'role'    => ['required', Rule::in([User::ROLE_VOTER, User::ROLE_PARTICIPANT])],
             'consent' => ['accepted'],
         ];
 
         if (! Auth::check()) {
             $shared['phone'] = ['required', 'string', 'max:32'];
-        }
-
-        if ($this->role === User::ROLE_VOTER) {
-            return array_merge($shared, [
-                'name' => ['required', 'string', 'min:2', 'max:100'],
-            ]);
         }
 
         return array_merge($shared, [
@@ -107,15 +85,13 @@ class Register extends Component
 
     public function submit()
     {
-        if ($this->role === User::ROLE_PARTICIPANT) {
-            $allowed = \App\Support\Abidjan::quartiers($this->commune);
-            if (! in_array($this->quartier, $allowed, true)) {
-                throw ValidationException::withMessages([
-                    'quartier' => 'Sélectionnez un quartier valide pour cette commune.',
-                ]);
-            }
-            $this->city = "{$this->commune} - {$this->quartier}";
+        $allowed = \App\Support\Abidjan::quartiers($this->commune);
+        if (! in_array($this->quartier, $allowed, true)) {
+            throw ValidationException::withMessages([
+                'quartier' => 'Sélectionnez un quartier valide pour cette commune.',
+            ]);
         }
+        $this->city = "{$this->commune} - {$this->quartier}";
 
         $this->validate();
 
@@ -138,50 +114,12 @@ class Register extends Component
             $this->phone = $normalized;
         }
 
-        if ($this->role === User::ROLE_VOTER) {
-            return $this->submitVoter();
-        }
-
         return $this->submitParticipant();
     }
 
     protected function generatePassword(): string
     {
-        // 8 chiffres = 10^8 combinaisons. Combiné au rate-limit login (5/300s),
-        // bruteforce ciblé d'1 compte = > 100 ans à la pire IP unique.
         return str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
-    }
-
-    protected function submitVoter()
-    {
-        $password = $this->generatePassword();
-
-        $user = User::create([
-            'name'           => trim($this->name),
-            'phone'          => $this->phone,
-            'email'          => null,
-            'password'       => Hash::make($password),
-            'plain_password' => $password,
-            'role'           => User::ROLE_VOTER,
-            'signup_ip'      => request()->ip(),
-        ]);
-
-        $this->sendCredentialsSms($user, $password);
-
-        $user->forceFill([
-            'last_login_ip' => request()->ip(),
-            'last_login_at' => now(),
-        ])->saveQuietly();
-
-        Auth::login($user, true);
-
-        $msg = 'Bienvenue ! Votre mot de passe a été envoyé par SMS. Vous pouvez aussi le retrouver et le copier depuis votre menu personnel (en haut à droite).';
-
-        if (session()->has('url.intended')) {
-            return redirect()->intended(route('contest.gallery'))->with('status', $msg);
-        }
-
-        return redirect()->route('contest.gallery')->with('status', $msg);
     }
 
     protected function submitParticipant()
@@ -200,7 +138,6 @@ class Register extends Component
 
         $this->ensureSubmissionIsAllowed();
 
-        // Refus si user déjà inscrit avec une participation
         if ($u = Auth::user()) {
             $existing = Participant::where('user_id', $u->id)->first();
             if ($existing) {
@@ -211,7 +148,6 @@ class Register extends Component
             }
         }
 
-        // Refus si téléphone déjà utilisé par un autre participant
         $phoneToCheck = Auth::check() ? Auth::user()->phone : $this->phone;
         if ($phoneToCheck && Participant::where('phone', $phoneToCheck)->exists()) {
             throw ValidationException::withMessages([
@@ -238,8 +174,6 @@ class Register extends Component
                 ]);
                 $generatedPwd = $password;
                 Auth::login($user, true);
-            } elseif ($user->isVoter()) {
-                $user->update(['role' => User::ROLE_PARTICIPANT]);
             }
 
             $participant = Participant::create([
@@ -298,7 +232,6 @@ class Register extends Component
             }
         }
 
-        // Plaintext token disponible uniquement dans la requête de création.
         session(['participant_token' => $participant->plainDashboardToken]);
         $this->step = 'done';
         $this->reset(['photo', 'anecdote']);

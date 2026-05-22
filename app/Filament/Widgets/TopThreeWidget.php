@@ -23,7 +23,7 @@ class TopThreeWidget extends BaseWidget
             ->query(
                 Participant::approved()
                     ->orderByDesc('vote_count')
-                    ->orderByDesc('approved_at')
+                    ->orderBy('created_at', 'asc')
                     ->limit(3)
             )
             ->paginated(false)
@@ -50,6 +50,10 @@ class TopThreeWidget extends BaseWidget
                     ->badge()
                     ->color('warning')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Soumis le')
+                    ->dateTime('d/m/Y H:i')
+                    ->tooltip('Date de soumission — départage en cas d\'égalité'),
             ]);
     }
 }

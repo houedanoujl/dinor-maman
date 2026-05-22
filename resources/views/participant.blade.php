@@ -24,7 +24,9 @@
                 <span class="inline-flex items-center gap-1 rounded-full bg-dinor-gold/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-dinor-gold">
                     Classement #{{ $rank }}
                 </span>
-                <span class="text-xs text-gray-500">Approuvé{{ $participant->approved_at ? ' le ' . $participant->approved_at->translatedFormat('d M Y') : '' }}</span>
+                <span class="text-xs text-gray-500">
+                    Soumis le {{ $participant->created_at->translatedFormat('d M Y \à H\hi') }}
+                </span>
             </div>
 
             <h1 class="mt-3 font-display text-4xl font-bold leading-tight text-dinor-dark md:text-5xl">

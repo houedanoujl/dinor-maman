@@ -39,7 +39,7 @@ class UserResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->withCount('votes');
+        return parent::getEloquentQuery();
     }
 
     public static function form(Schema $schema): Schema
@@ -62,7 +62,6 @@ class UserResource extends Resource
                         ->label('Rôle')
                         ->options(function ($record) {
                             $opts = [
-                                User::ROLE_VOTER       => 'Votant',
                                 User::ROLE_PARTICIPANT => 'Participant',
                             ];
                             // Seuls les admins existants peuvent rester admin
@@ -125,13 +124,11 @@ class UserResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         User::ROLE_ADMIN       => 'danger',
                         User::ROLE_PARTICIPANT => 'warning',
-                        User::ROLE_VOTER       => 'success',
                         default                => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         User::ROLE_ADMIN       => 'Admin',
                         User::ROLE_PARTICIPANT => 'Participant',
-                        User::ROLE_VOTER       => 'Votant',
                         default                => $state,
                     }),
                 Tables\Columns\TextColumn::make('phone')
@@ -160,11 +157,6 @@ class UserResource extends Resource
                     ->placeholder('—')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('votes_count')
-                    ->label('Votes')
-                    ->badge()
-                    ->color('primary')
-                    ->sortable(),
                 Tables\Columns\IconColumn::make('email_verified_at')
                     ->label('Email vérifié')
                     ->boolean()
@@ -178,7 +170,6 @@ class UserResource extends Resource
                 SelectFilter::make('role')
                     ->label('Rôle')
                     ->options([
-                        User::ROLE_VOTER       => 'Votant',
                         User::ROLE_PARTICIPANT => 'Participant',
                         User::ROLE_ADMIN       => 'Administrateur',
                     ]),

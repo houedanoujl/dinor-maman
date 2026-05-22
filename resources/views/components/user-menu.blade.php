@@ -56,8 +56,6 @@
                         <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">Admin</span>
                     @elseif($authUser->isParticipant())
                         <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-dinor-gold/10 px-2 py-0.5 text-[10px] font-semibold text-dinor-gold">Participant</span>
-                    @else
-                        <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-dinor-red/10 px-2 py-0.5 text-[10px] font-semibold text-dinor-red">Votant</span>
                     @endif
                 @endif
             </div>
@@ -117,16 +115,6 @@
                         Ma page publique
                     </a>
                 @endif
-            @endif
-
-            @if($authUser && $authUser->isVoter() && ! $currentParticipant)
-                <a href="{{ route('register', ['role' => 'participant']) }}"
-                   class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-dinor-gold transition hover:bg-dinor-cream">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Devenir participant
-                </a>
             @endif
 
             @if($authUser?->isAdmin())

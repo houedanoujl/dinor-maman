@@ -34,6 +34,9 @@
                         <p class="truncate font-display text-xl font-bold text-dinor-dark">{{ $p->full_name }}</p>
                         <p class="text-sm text-gray-500">{{ $p->city }}</p>
                         <p class="mt-2 text-sm font-semibold text-dinor-red">{{ number_format($winner->vote_count_snapshot) }} votes</p>
+                        @if ($p?->created_at)
+                            <p class="mt-1 text-xs text-gray-400">Photo soumise le {{ $p->created_at->translatedFormat('d M Y \à H\hi') }}</p>
+                        @endif
                     </div>
                 </article>
             @endforeach

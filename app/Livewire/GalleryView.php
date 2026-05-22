@@ -2,15 +2,13 @@
 
 namespace App\Livewire;
 
-use App\Livewire\VoteButton;
+use App\Http\Middleware\EnsureVoterToken;
 use App\Models\Participant;
 use App\Models\Vote;
 use App\Support\ContestSettings;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -58,18 +56,12 @@ class GalleryView extends Component
 
     protected function voterToken(): string
     {
-        $cookie = (string) request()->cookie(VoteButton::COOKIE_NAME, '');
-        if ($cookie !== '') {
-            return $cookie;
-        }
-        $token = (string) Str::ulid() . bin2hex(random_bytes(8));
-        Cookie::queue(VoteButton::COOKIE_NAME, $token, VoteButton::COOKIE_MINUTES);
-        return $token;
+        return (string) (request()->attributes->get('voter_token') ?? request()->cookie(EnsureVoterToken::COOKIE_NAME, ''));
     }
 
     protected function votedIds(): Collection
     {
-        $token = (string) request()->cookie(VoteButton::COOKIE_NAME, '');
+        $token = $this->voterToken();
         if ($token === '') {
             return collect();
         }
@@ -96,8 +88,8 @@ class GalleryView extends Component
         }
         RateLimiter::hit($ipKey, 60);
 
-        if (Vote::where('voter_token', $token)->exists()) {
-            $this->dispatch('toast', type: 'warning', message: 'Vous avez déjà voté pour un participant. Un seul vote par concours.');
+        if (Vote::where('voter_token', $token)->where('participant_id', $participantId)->exists()) {
+            $this->dispatch('toast', type: 'warning', message: 'Vous avez déjà voté pour ce participant.');
             return;
         }
 
@@ -144,12 +136,11 @@ class GalleryView extends Component
             ->when($tag, fn ($q) => $q->where('city', 'like', "%{$tag}%"));
 
         $query = $this->sort === 'popular'
-            ? $query->orderByDesc('vote_count')->orderByDesc('approved_at')
-            : $query->orderByDesc('approved_at');
+            ? $query->orderByDesc('vote_count')->orderBy('created_at', 'asc')
+            : $query->orderByDesc('created_at');
 
         $participants = $query->paginate(24);
         $votedIds = $this->votedIds()->flip();
-        $hasVotedAnywhere = $votedIds->isNotEmpty();
 
         $cityTags = Participant::approved()
             ->select('city')
@@ -162,7 +153,6 @@ class GalleryView extends Component
             'participants' => $participants,
             'cityTags' => $cityTags,
             'votedIds' => $votedIds,
-            'hasVotedAnywhere' => $hasVotedAnywhere,
             'contestEndsAt' => ContestSettings::endsAt(),
             'contestEnded' => $this->contestEnded(),
         ]);

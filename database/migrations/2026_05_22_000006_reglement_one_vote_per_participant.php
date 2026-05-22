@@ -15,7 +15,6 @@ return new class extends Migration
 <p>Les votes sont ouverts à tous, sans création de compte ni numéro de téléphone. <strong>Chaque visiteur peut voter une seule fois par participant</strong> sur toute la durée du concours. Le vote est anonyme et contrôlé par cookie de navigation, adresse IP, session et tout autre dispositif technique mis en place par l\'Organisateur afin de prévenir les abus.</p>
 <p>Les votes automatisés, frauduleux ou obtenus par des moyens non conformes entraîneront la disqualification du participant concerné.</p>';
 
-            // Remplace l'Article 7 complet (et le paragraphe disqualif qui suit)
             $pattern = '#<h2>Article 7\s*[–-]\s*Votes</h2>.*?(?=<h2>Article 8)#s';
             $updated = preg_replace($pattern, $newArticle7 . "\n\n", $reglement, 1);
 
@@ -31,9 +30,6 @@ return new class extends Migration
         if ($faqRaw) {
             $faq = json_decode($faqRaw, true) ?: [];
             foreach ($faq as &$item) {
-                if (($item['q'] ?? '') === 'Qui peut voter ?') {
-                    $item['a'] = "Tout le monde peut voter, sans création de compte ni numéro de téléphone. Le vote est anonyme.";
-                }
                 if (($item['q'] ?? '') === 'Peut-on voter plusieurs fois ?') {
                     $item['a'] = "Chaque visiteur peut voter une seule fois par participant, mais peut soutenir plusieurs participants différents. Le contrôle se fait par cookie, IP et session pour prévenir les abus.";
                 }
@@ -52,6 +48,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Pas de rollback — modifications de contenu.
+        // Pas de rollback - modifications de contenu
     }
 };

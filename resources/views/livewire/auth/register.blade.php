@@ -81,67 +81,24 @@
         <div class="mb-6 text-center">
             <p class="text-xs font-bold uppercase tracking-wider text-dinor-gold">Inscription</p>
             <h1 class="mt-2 font-display text-3xl font-bold text-dinor-dark md:text-4xl">
-                @if ($role === 'participant') Participez au concours
-                @else Créez votre compte
-                @endif
+                Participez au concours
             </h1>
-            <p class="mt-2 text-gray-600">
-                @if ($role === 'participant') Compte + photo en une étape.
-                @else Pour voter ou participer.
-                @endif
-            </p>
+            <p class="mt-2 text-gray-600">Compte + photo en une étape. Le vote est libre et anonyme, sans inscription.</p>
         </div>
 
-        @if ($role === 'participant' && $contestEnded)
+        @if ($contestEnded)
             <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                 Le concours est terminé. Les nouvelles participations sont clôturées.
             </div>
         @endif
 
-        @if ($role === 'participant' && ! $uploadOpen && ! $contestEnded)
+        @if (! $uploadOpen && ! $contestEnded)
             <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                La phase d'upload est terminée. Vous pouvez encore créer un compte votant.
+                La phase d'upload est terminée. Les votes restent ouverts dans la galerie.
             </div>
         @endif
 
         <form wire:submit="submit" class="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-
-            {{-- Switcher de rôle --}}
-            <div>
-                <label class="block text-sm font-semibold text-dinor-dark mb-3">Je m'inscris en tant que :</label>
-                <div class="grid gap-3 sm:grid-cols-2">
-                    <label class="relative cursor-pointer">
-                        <input type="radio" wire:model.live="role" value="voter" class="peer sr-only" {{ $isAuthed ? 'disabled' : '' }} />
-                        <div class="rounded-2xl border-2 border-gray-200 p-4 transition peer-checked:border-dinor-red peer-checked:bg-dinor-red/5 hover:border-dinor-red/50">
-                            <div class="flex items-center gap-3">
-                                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-dinor-red/10 text-dinor-red">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                </span>
-                                <div>
-                                    <p class="font-semibold text-dinor-dark">Votant</p>
-                                    <p class="text-xs text-gray-500">Voter pour les photos</p>
-                                </div>
-                            </div>
-                        </div>
-                    </label>
-
-                    <label class="relative cursor-pointer">
-                        <input type="radio" wire:model.live="role" value="participant" class="peer sr-only" />
-                        <div class="rounded-2xl border-2 border-gray-200 p-4 transition peer-checked:border-dinor-red peer-checked:bg-dinor-red/5 hover:border-dinor-red/50">
-                            <div class="flex items-center gap-3">
-                                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-dinor-gold/10 text-dinor-gold">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                </span>
-                                <div>
-                                    <p class="font-semibold text-dinor-dark">Participant</p>
-                                    <p class="text-xs text-gray-500">Soumettre une photo</p>
-                                </div>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-                @error('role') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-            </div>
 
             {{-- Téléphone (identifiant unique) --}}
             @unless ($isAuthed)
@@ -176,20 +133,10 @@
                 </div>
             @endunless
 
-            {{-- Champs VOTANT --}}
-            @if ($role === 'voter')
-                <div>
-                    <label class="block text-sm font-medium">Nom complet</label>
-                    <input type="text" wire:model="name" class="input-dinor mt-1" autocomplete="name" />
-                    @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                </div>
-            @endif
-
             {{-- Champs PARTICIPANT --}}
-            @if ($role === 'participant')
-                @php $uploadLocked = $contestEnded || ! $uploadOpen; @endphp
+            @php $uploadLocked = $contestEnded || ! $uploadOpen; @endphp
 
-                <fieldset @disabled($uploadLocked) class="contents {{ $uploadLocked ? 'opacity-60 pointer-events-none select-none' : '' }}">
+            <fieldset @disabled($uploadLocked) class="contents {{ $uploadLocked ? 'opacity-60 pointer-events-none select-none' : '' }}">
                 <div class="rounded-2xl border border-dinor-gold/30 bg-dinor-gold/5 p-4">
                     <p class="flex items-center gap-2 text-sm font-semibold text-dinor-dark">
                         <svg class="h-4 w-4 shrink-0 text-dinor-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -343,8 +290,7 @@
                     <p class="mt-1 text-xs text-gray-400" x-show="!supported">Astuce : la dictée vocale est disponible sur Chrome et Edge.</p>
                     @error('anecdote') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
-                </fieldset>
-            @endif
+            </fieldset>
 
             {{-- Consentement --}}
             <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -361,12 +307,8 @@
             <button type="submit"
                     class="btn-dinor w-full py-3 text-base disabled:opacity-50"
                     wire:loading.attr="disabled"
-                    @if($role === 'participant' && ($contestEnded || ! $uploadOpen)) disabled @endif>
-                <span wire:loading.remove wire:target="submit">
-                    @if ($role === 'participant') Envoyer ma participation
-                    @else Créer mon compte
-                    @endif
-                </span>
+                    @if($contestEnded || ! $uploadOpen) disabled @endif>
+                <span wire:loading.remove wire:target="submit">Envoyer ma participation</span>
                 <span wire:loading wire:target="submit">Envoi…</span>
             </button>
 

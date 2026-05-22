@@ -4,39 +4,39 @@ namespace App\Console\Commands;
 
 use App\Models\Participant;
 use App\Models\Winner;
-use App\Notifications\WinnerAnnouncement;
-use App\Services\SmsNotifier;
 use App\Support\ContestSettings;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Notification;
 
 class AnnounceWinners extends Command
 {
-    protected $signature = 'contest:announce-winners';
+    protected $signature = 'contest:announce-winners {--force : Force annonce même avant la fin du concours}';
 
-    protected $description = 'Freeze top 3 winners and notify them';
+    protected $description = 'Fige le top 3 des participants dans la table winners (snapshot). Aucune notification envoyée — annonce externe par DINOR sur ses canaux officiels.';
 
     public function handle(): int
     {
-        if (now()->lessThanOrEqualTo(ContestSettings::endsAt())) {
-            $this->warn('Contest is not finished yet.');
+        if (! $this->option('force') && now()->lessThanOrEqualTo(ContestSettings::endsAt())) {
+            $this->warn('Le concours n\'est pas encore terminé. Utilisez --force pour ignorer.');
             return self::FAILURE;
         }
 
-        // Cycle basé sur le mois de fin du concours (et non le mois courant)
         $cycle = ContestSettings::endsAt()->format('Y-m');
+
         if (Winner::where('contest_cycle', $cycle)->exists()) {
-            $this->info('Winners already announced for this cycle.');
+            $this->info('Gagnants déjà figés pour le cycle ' . $cycle . '.');
             return self::SUCCESS;
         }
 
         $top = Participant::approved()
             ->orderByDesc('vote_count')
-            ->orderByDesc('approved_at')
+            ->orderBy('created_at', 'asc')
             ->take(3)
             ->get();
 
-        $sms = app(SmsNotifier::class);
+        if ($top->isEmpty()) {
+            $this->warn('Aucun participant approuvé.');
+            return self::FAILURE;
+        }
 
         foreach ($top as $index => $participant) {
             $rank = $index + 1;
@@ -49,18 +49,10 @@ class AnnounceWinners extends Command
                 'contest_cycle' => $cycle,
             ]);
 
-            if ($participant->email) {
-                Notification::route('mail', $participant->email)
-                    ->notify(new WinnerAnnouncement($participant, $rank));
-            }
-
-            $sms->send(
-                $participant->phone,
-                "Bravo ! Vous etes #{$rank} du concours. Consultez les resultats sur le site."
-            );
+            $this->info("#{$rank} — {$participant->full_name} ({$participant->vote_count} votes)");
         }
 
-        $this->info('Winners announced.');
+        $this->info('Top 3 figé. L\'annonce officielle se fait sur les plateformes DINOR (cf règlement).');
 
         return self::SUCCESS;
     }
