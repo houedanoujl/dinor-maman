@@ -71,6 +71,14 @@ Route::get('/galerie', GalleryView::class)
 Route::get('/profil/{participant}', function (Participant $participant) {
     abort_unless($participant->status === Participant::STATUS_APPROVED, 404);
 
+    // Guest arrivant via lien de partage → redirige vers inscription, retour auto après.
+    if (! Auth::check()) {
+        $ref = request()->integer('ref') ?: $participant->id;
+        session(['url.intended' => route('participant.show', $participant) . '?ref=' . $ref]);
+        return redirect()->route('register')
+            ->with('status', 'Inscrivez-vous pour voter pour ' . $participant->first_name . ' et découvrir les autres participants.');
+    }
+
     $rank = Participant::approved()
         ->where(function ($q) use ($participant) {
             $q->where('vote_count', '>', $participant->vote_count)
@@ -121,10 +129,16 @@ Route::get('/profil/{participant}', function (Participant $participant) {
 })->middleware('throttle:120,1')->name('participant.show');
 
 Route::get('/mon-espace/{token}', function (string $token) {
-    $participant = Participant::where('dashboard_token', $token)->firstOrFail();
+    $participant = Participant::findByDashboardToken($token);
+    abort_if(! $participant, 404);
 
     // Mémorise le participant en session pour afficher son menu utilisateur
-    session(['participant_token' => $participant->dashboard_token]);
+    session(['participant_token' => $token]);
+
+    // Auto-login du User associé pour permettre le vote direct depuis le dashboard / la galerie.
+    if ($participant->user_id && (! Auth::check() || Auth::id() !== $participant->user_id)) {
+        Auth::loginUsingId($participant->user_id, true);
+    }
 
     // Classement (uniquement si approuvé)
     $rank = null;
@@ -183,11 +197,8 @@ Route::get('/gagnants', function () {
     $endsAt = ContestSettings::endsAt();
     $cycle = $endsAt->format('Y-m');
 
-    // Si le concours est termin\u00e9 et que les gagnants ne sont pas encore fig\u00e9s,
-    // on lance la commande d'annonce automatiquement (filet de s\u00e9curit\u00e9 si scheduler absent).
-    if (now()->greaterThan($endsAt) && ! Winner::where('contest_cycle', $cycle)->exists()) {
-        \Illuminate\Support\Facades\Artisan::call('contest:announce-winners');
-    }
+    // La d\u00e9signation des gagnants se fait via scheduler:
+    // `php artisan contest:announce-winners` (jamais d\u00e9clench\u00e9 par requ\u00eate HTTP).
 
     $winners = Winner::query()
         ->with('participant')

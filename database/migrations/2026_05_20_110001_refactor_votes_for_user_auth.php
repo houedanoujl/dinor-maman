@@ -13,7 +13,7 @@ return new class extends Migration
         DB::table('votes')->truncate();
         DB::table('participants')->update(['vote_count' => 0]);
 
-        $indexes = collect(DB::select("SHOW INDEX FROM votes"))->pluck('Key_name')->unique();
+        $indexes = collect(Schema::getIndexes('votes'))->pluck('name')->unique();
 
         // Drop FK pour pouvoir drop les uniques qui la couvrent
         Schema::table('votes', function (Blueprint $table) {

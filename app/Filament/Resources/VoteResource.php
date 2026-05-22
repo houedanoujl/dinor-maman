@@ -62,7 +62,8 @@ class VoteResource extends Resource
                 Tables\Columns\TextColumn::make('ip_address')
                     ->label('IP')
                     ->searchable()
-                    ->toggleable(),
+                    ->copyable()
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('session_id')
                     ->label('Session')
                     ->limit(12)

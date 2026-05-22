@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Participant;
+use App\Models\User;
 use App\Services\SmsNotifier;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
@@ -33,23 +34,29 @@ class ParticipantLogin extends Component
         }
         RateLimiter::hit($key, 60);
 
-        $normalized = preg_replace('/\s+/', '', trim($this->phone));
+        if (! User::isValidCiPhone($this->phone)) {
+            $this->sent = true;
+            $this->maskedPhone = $this->mask($this->phone);
+            return;
+        }
 
-        $participant = Participant::query()
-            ->where('phone', $normalized)
-            ->orWhere('phone', ltrim($normalized, '+'))
-            ->orWhere('phone', '+' . ltrim($normalized, '+'))
-            ->first();
+        $normalized = User::normalizePhone($this->phone);
+
+        $participant = Participant::where('phone', $normalized)->first();
 
         // Réponse identique que le numéro existe ou non (anti-énumération)
         $this->sent = true;
         $this->maskedPhone = $this->mask($normalized);
 
-        if (! $participant || ! $participant->dashboard_token) {
+        if (! $participant) {
             return;
         }
 
-        $url = route('participant.dashboard', $participant->dashboard_token);
+        // Rotation: génère un nouveau token plaintext à chaque demande de lien.
+        // L'ancien lien partagé devient invalide.
+        $plainToken = $participant->regenerateDashboardToken();
+
+        $url = route('participant.dashboard', $plainToken);
 
         // Envoi SMS du lien
         try {

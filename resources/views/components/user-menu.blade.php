@@ -6,7 +6,10 @@
     $token = session('participant_token');
     $currentParticipant = null;
     if ($token) {
-        $currentParticipant = Participant::where('dashboard_token', $token)->first();
+        $currentParticipant = Participant::findByDashboardToken($token);
+        if ($currentParticipant) {
+            $currentParticipant->plainDashboardToken = $token;
+        }
         if (! $currentParticipant) {
             session()->forget('participant_token');
         }

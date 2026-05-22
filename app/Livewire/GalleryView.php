@@ -94,12 +94,6 @@ class GalleryView extends Component
             return;
         }
 
-        // Empêche de voter pour soi-même
-        if ($participant->user_id === Auth::id()) {
-            $this->dispatch('toast', type: 'warning', message: 'Vous ne pouvez pas voter pour votre propre photo.');
-            return;
-        }
-
         try {
             DB::transaction(function () use ($participantId) {
                 Vote::create([
@@ -124,14 +118,17 @@ class GalleryView extends Component
 
     public function render()
     {
+        $search = mb_substr(trim($this->search), 0, 50);
+        $tag = mb_substr(trim($this->tag), 0, 50);
+
         $query = Participant::approved()
             ->with('media')
-            ->when($this->search, fn ($q) => $q->where(function ($q) {
-                $q->where('first_name', 'like', "%{$this->search}%")
-                  ->orWhere('last_name', 'like', "%{$this->search}%")
-                  ->orWhere('city', 'like', "%{$this->search}%");
+            ->when(mb_strlen($search) >= 2, fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%");
             }))
-            ->when($this->tag, fn ($q) => $q->where('city', 'like', "%{$this->tag}%"));
+            ->when($tag, fn ($q) => $q->where('city', 'like', "%{$tag}%"));
 
         $query = $this->sort === 'popular'
             ? $query->orderByDesc('vote_count')->orderByDesc('approved_at')

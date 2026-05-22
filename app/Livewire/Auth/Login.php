@@ -53,6 +53,10 @@ class Login extends Component
         request()->session()->regenerate();
 
         $user = Auth::user();
+        $user->forceFill([
+            'last_login_ip' => request()->ip(),
+            'last_login_at' => now(),
+        ])->saveQuietly();
 
         if (session()->has('url.intended')) {
             return redirect()->intended();

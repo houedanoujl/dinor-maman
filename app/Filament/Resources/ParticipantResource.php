@@ -53,6 +53,14 @@ class ParticipantResource extends Resource
                         ->options(\App\Support\Abidjan::flat())
                         ->searchable(),
                     Forms\Components\TextInput::make('email')->email()->label('Email'),
+                    Forms\Components\TextInput::make('user.plain_password')
+                        ->label('Mot de passe (clair)')
+                        ->revealable()
+                        ->password()
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->placeholder('—')
+                        ->helperText('Mot de passe envoyé par SMS lors de l\'inscription.'),
                     Forms\Components\Select::make('status')
                         ->label('Statut')
                         ->options([
@@ -108,6 +116,22 @@ class ParticipantResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Téléphone')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('user.plain_password')
+                    ->label('Mot de passe')
+                    ->copyable()
+                    ->copyMessage('Mot de passe copié')
+                    ->placeholder('—')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('user.signup_ip')
+                    ->label('IP inscription')
+                    ->copyable()
+                    ->placeholder('—')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('user.last_login_ip')
+                    ->label('IP dernière connexion')
+                    ->copyable()
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('anecdote')
                     ->label('Anecdote')
                     ->limit(60)
@@ -130,6 +154,9 @@ class ParticipantResource extends Resource
                         ]);
 
                         if ($state) {
+                            // Régénère un dashboard_token plaintext pour le mail et le SMS.
+                            $record->regenerateDashboardToken();
+
                             if ($record->email) {
                                 Notification::route('mail', $record->email)
                                     ->notify(new ParticipationApproved($record));

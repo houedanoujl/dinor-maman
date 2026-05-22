@@ -59,7 +59,15 @@ class Register extends Component
 
             $existing = Participant::where('user_id', $u->id)->first();
             if ($existing) {
-                return redirect()->route('participant.dashboard', $existing->dashboard_token);
+                $plainToken = $existing->regenerateDashboardToken();
+                session(['participant_token' => $plainToken]);
+                return redirect()->route('participant.dashboard', $plainToken);
+            }
+
+            // Voter authed: reste voter sauf si demande explicite ?role=participant.
+            if ($u->isVoter() && request()->query('role') !== User::ROLE_PARTICIPANT) {
+                return redirect()->route('contest.gallery')
+                    ->with('status', 'Vous êtes déjà inscrit comme votant. Vous pouvez voter directement.');
             }
 
             $this->role = User::ROLE_PARTICIPANT;
@@ -139,7 +147,9 @@ class Register extends Component
 
     protected function generatePassword(): string
     {
-        return str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // 8 chiffres = 10^8 combinaisons. Combiné au rate-limit login (5/300s),
+        // bruteforce ciblé d'1 compte = > 100 ans à la pire IP unique.
+        return str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
     }
 
     protected function submitVoter()
@@ -147,16 +157,28 @@ class Register extends Component
         $password = $this->generatePassword();
 
         $user = User::create([
-            'name'     => trim($this->name),
-            'phone'    => $this->phone,
-            'email'    => null,
-            'password' => Hash::make($password),
-            'role'     => User::ROLE_VOTER,
+            'name'           => trim($this->name),
+            'phone'          => $this->phone,
+            'email'          => null,
+            'password'       => Hash::make($password),
+            'plain_password' => $password,
+            'role'           => User::ROLE_VOTER,
+            'signup_ip'      => request()->ip(),
         ]);
 
         $this->sendCredentialsSms($user, $password);
 
+        $user->forceFill([
+            'last_login_ip' => request()->ip(),
+            'last_login_at' => now(),
+        ])->saveQuietly();
+
         Auth::login($user, true);
+
+        if (session()->has('url.intended')) {
+            return redirect()->intended(route('contest.gallery'))
+                ->with('status', 'Bienvenue ! Votre mot de passe a été envoyé par SMS.');
+        }
 
         return redirect()->route('contest.gallery')
             ->with('status', 'Bienvenue ! Votre mot de passe a été envoyé par SMS.');
@@ -182,8 +204,9 @@ class Register extends Component
         if ($u = Auth::user()) {
             $existing = Participant::where('user_id', $u->id)->first();
             if ($existing) {
-                session(['participant_token' => $existing->dashboard_token]);
-                return redirect()->route('participant.dashboard', $existing->dashboard_token)
+                $plainToken = $existing->regenerateDashboardToken();
+                session(['participant_token' => $plainToken]);
+                return redirect()->route('participant.dashboard', $plainToken)
                     ->with('status', 'Vous avez déjà soumis une participation.');
             }
         }
@@ -205,11 +228,13 @@ class Register extends Component
 
             if (! $user) {
                 $user = User::create([
-                    'name'     => trim($this->first_name . ' ' . $this->last_name),
-                    'phone'    => $this->phone,
-                    'email'    => null,
-                    'password' => Hash::make($password),
-                    'role'     => User::ROLE_PARTICIPANT,
+                    'name'           => trim($this->first_name . ' ' . $this->last_name),
+                    'phone'          => $this->phone,
+                    'email'          => null,
+                    'password'       => Hash::make($password),
+                    'plain_password' => $password,
+                    'role'           => User::ROLE_PARTICIPANT,
+                    'signup_ip'      => request()->ip(),
                 ]);
                 $generatedPwd = $password;
                 Auth::login($user, true);
@@ -273,7 +298,8 @@ class Register extends Component
             }
         }
 
-        session(['participant_token' => $participant->dashboard_token]);
+        // Plaintext token disponible uniquement dans la requête de création.
+        session(['participant_token' => $participant->plainDashboardToken]);
         $this->step = 'done';
         $this->reset(['photo', 'anecdote']);
     }

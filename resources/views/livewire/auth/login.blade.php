@@ -33,9 +33,9 @@
 
         <div>
             <label class="block text-sm font-medium">Mot de passe (reçu par SMS)</label>
-            <input type="password" wire:model="password" class="input-dinor mt-1" autocomplete="current-password" inputmode="numeric" maxlength="6" />
+            <input type="password" wire:model="password" class="input-dinor mt-1" autocomplete="current-password" inputmode="numeric" maxlength="8" />
             @error('password') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-            <p class="mt-1 text-xs text-gray-500">Code à 6 chiffres envoyé lors de votre inscription.</p>
+            <p class="mt-1 text-xs text-gray-500">Code à 8 chiffres envoyé par SMS lors de votre inscription.</p>
         </div>
 
         <label class="flex items-center gap-2 text-sm text-gray-600">

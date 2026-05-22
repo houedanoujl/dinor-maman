@@ -38,13 +38,35 @@ class Participant extends Model implements HasMedia
         'phone_verified_at',
     ];
 
+    /**
+     * Plaintext dashboard token, set after creation/regeneration.
+     * Not persisted; only available in the request that generated it.
+     */
+    public ?string $plainDashboardToken = null;
+
     protected static function booted(): void
     {
         static::creating(function (self $participant) {
             if (empty($participant->dashboard_token)) {
-                $participant->dashboard_token = Str::random(40);
+                $plain = Str::random(40);
+                $participant->plainDashboardToken = $plain;
+                $participant->dashboard_token = hash('sha256', $plain);
             }
         });
+    }
+
+    public function regenerateDashboardToken(): string
+    {
+        $plain = Str::random(40);
+        $this->plainDashboardToken = $plain;
+        $this->dashboard_token = hash('sha256', $plain);
+        $this->save();
+        return $plain;
+    }
+
+    public static function findByDashboardToken(string $plain): ?self
+    {
+        return static::where('dashboard_token', hash('sha256', $plain))->first();
     }
 
     protected $casts = [
@@ -97,8 +119,10 @@ class Participant extends Model implements HasMedia
 
     public function getDashboardUrlAttribute(): ?string
     {
-        return $this->dashboard_token
-            ? route('participant.dashboard', $this->dashboard_token)
+        // URL ne peut être générée qu'à partir du plaintext (présent uniquement
+        // dans la requête qui a créé/régénéré le token).
+        return $this->plainDashboardToken
+            ? route('participant.dashboard', $this->plainDashboardToken)
             : null;
     }
 }

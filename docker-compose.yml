@@ -22,9 +22,32 @@ services:
         networks:
             - sail
         depends_on:
-            - mysql
-            - redis
-            - mailpit
+            app-init:
+                condition: service_completed_successfully
+            mysql:
+                condition: service_started
+            redis:
+                condition: service_started
+            mailpit:
+                condition: service_started
+
+    app-init:
+        image: sail-8.4/app
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.4
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+            SUPERVISOR_PHP_USER: sail
+        command: ['bash', '/var/www/html/docker/init.sh']
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        restart: 'no'
 
     mysql:
         image: 'mysql/mysql-server:8.0'

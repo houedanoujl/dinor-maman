@@ -56,24 +56,42 @@ class UserResource extends Resource
                         ->maxLength(150),
                     Forms\Components\Select::make('role')
                         ->label('Rôle')
-                        ->options([
-                            User::ROLE_VOTER       => 'Votant',
-                            User::ROLE_PARTICIPANT => 'Participant',
-                            User::ROLE_ADMIN       => 'Administrateur',
-                        ])
+                        ->options(function ($record) {
+                            $opts = [
+                                User::ROLE_VOTER       => 'Votant',
+                                User::ROLE_PARTICIPANT => 'Participant',
+                            ];
+                            // Seuls les admins existants peuvent rester admin
+                            // (pas de promotion arbitraire depuis l'interface).
+                            if ($record && $record->isAdmin()) {
+                                $opts[User::ROLE_ADMIN] = 'Administrateur';
+                            }
+                            return $opts;
+                        })
                         ->required()
-                        ->native(false),
+                        ->native(false)
+                        ->disabled(fn ($record) => $record && $record->id === auth()->id())
+                        ->helperText('La promotion en Administrateur se fait uniquement via AdminSeeder / CLI (audit trail).'),
                     Forms\Components\TextInput::make('phone')
                         ->label('Téléphone')
                         ->tel()
                         ->maxLength(20),
                     Forms\Components\TextInput::make('password')
-                        ->label('Mot de passe')
+                        ->label('Nouveau mot de passe')
                         ->password()
+                        ->revealable()
                         ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                         ->dehydrated(fn ($state) => filled($state))
                         ->required(fn (string $context): bool => $context === 'create')
+                        ->afterStateUpdated(fn ($state, $set) => filled($state) ? $set('plain_password', $state) : null)
+                        ->live(onBlur: true)
                         ->helperText('Laissez vide pour ne pas changer (en édition).'),
+                    Forms\Components\TextInput::make('plain_password')
+                        ->label('Mot de passe (clair)')
+                        ->revealable()
+                        ->password()
+                        ->dehydrated(fn ($state) => filled($state))
+                        ->helperText('Affiché en clair pour assistance utilisateur. Stocké pour permettre relais aux votants/participants.'),
                     Forms\Components\DateTimePicker::make('email_verified_at')
                         ->label('Email vérifié le')
                         ->native(false),
@@ -115,6 +133,28 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Téléphone')
                     ->searchable()
+                    ->placeholder('—'),
+                Tables\Columns\TextColumn::make('plain_password')
+                    ->label('Mot de passe')
+                    ->copyable()
+                    ->copyMessage('Mot de passe copié')
+                    ->placeholder('—')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('signup_ip')
+                    ->label('IP inscription')
+                    ->copyable()
+                    ->placeholder('—')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('last_login_ip')
+                    ->label('IP dernière connexion')
+                    ->copyable()
+                    ->placeholder('—')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('last_login_at')
+                    ->label('Dernière connexion')
+                    ->dateTime('d/m/Y H:i')
+                    ->placeholder('—')
+                    ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('votes_count')
                     ->label('Votes')

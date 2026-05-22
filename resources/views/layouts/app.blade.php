@@ -31,11 +31,13 @@
         $currentParticipant = null;
 
         if ($participantToken) {
-            $currentParticipant = \App\Models\Participant::where('dashboard_token', $participantToken)->first();
+            $currentParticipant = \App\Models\Participant::findByDashboardToken($participantToken);
 
             if (! $currentParticipant) {
                 session()->forget('participant_token');
                 $participantToken = null;
+            } else {
+                $currentParticipant->plainDashboardToken = $participantToken;
             }
         }
     @endphp

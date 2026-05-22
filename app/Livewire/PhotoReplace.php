@@ -29,8 +29,8 @@ class PhotoReplace extends Component
 
     protected function authorizeOwner(): void
     {
-        $token = session('participant_token');
-        if (! $token || $token !== $this->participant->dashboard_token) {
+        $token = (string) session('participant_token');
+        if (! $token || ! hash_equals($this->participant->dashboard_token, hash('sha256', $token))) {
             abort(403);
         }
     }

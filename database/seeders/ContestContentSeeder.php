@@ -98,6 +98,13 @@ class ContestContentSeeder extends Seeder
 
 <h2>Article 12 – Données personnelles</h2>
 <p>Les données collectées dans le cadre du jeu-concours, notamment le nom, prénom, téléphone et ville, sont utilisées uniquement pour la gestion du concours, la modération des participations, les notifications et la remise des lots. Ces données ne seront ni vendues ni cédées à des tiers.</p>
+<p>Afin de garantir l'intégrité du vote et prévenir les abus, l'Organisateur enregistre également des données techniques liées à chaque inscription, connexion et vote :</p>
+<ul>
+    <li>l'adresse IP utilisée lors de l'inscription, de la connexion et de chaque vote ;</li>
+    <li>la date et l'heure des actions effectuées ;</li>
+    <li>l'identifiant technique de session et le type de navigateur (user-agent).</li>
+</ul>
+<p>Ces informations sont conservées pendant toute la durée du concours et jusqu'à six (6) mois après son terme, à des fins de détection de fraudes et de contestation éventuelle des résultats.</p>
 <p>Conformément à la réglementation applicable en Côte d'Ivoire, chaque participant dispose d'un droit d'accès, de rectification et de suppression de ses données personnelles en contactant DINOR CI ou les autorités ivoiriennes chargées de la protection des données personnelles (ARTCI).</p>
 
 <h2>Article 13 – Responsabilité</h2>
