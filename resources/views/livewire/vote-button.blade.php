@@ -17,4 +17,9 @@
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
     <span class="font-semibold tabular-nums">{{ $count }}</span>
+    @if (! $hasVoted && ! $contestEnded)
+        <span class="font-semibold">· Cliquez pour voter</span>
+    @elseif ($hasVoted)
+        <span class="font-semibold">· Voté ✓</span>
+    @endif
 </button>

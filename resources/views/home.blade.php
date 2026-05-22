@@ -101,7 +101,6 @@
 
                     <div class="mt-4 flex items-center gap-3">
                         <livewire:vote-button :participant="$participant" :key="'home-vote-'.$participant->id" />
-                        <span class="text-sm font-semibold text-dinor-red">👉 Cliquez ici pour voter</span>
                     </div>
                 </div>
             </article>
