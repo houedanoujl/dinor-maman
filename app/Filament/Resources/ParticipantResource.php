@@ -7,6 +7,7 @@ use App\Models\Participant;
 use App\Models\SmsLog;
 use App\Notifications\ParticipationApproved;
 use App\Notifications\ParticipationRejected;
+use App\Notifications\PasswordReset;
 use App\Services\SmsDispatcher;
 use App\Services\SmsNotifier;
 use Filament\Actions;
@@ -213,12 +214,12 @@ class ParticipantResource extends Resource
                 Actions\ActionGroup::make([
                 Actions\EditAction::make(),
                 Actions\Action::make('resendPassword')
-                    ->label('Renvoyer mot de passe SMS')
+                    ->label('Renvoyer mot de passe (SMS + Email)')
                     ->icon('heroicon-o-chat-bubble-bottom-center-text')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->modalHeading('Renvoyer le mot de passe par SMS ?')
-                    ->modalDescription(fn ($record) => 'Génère un nouveau mot de passe (8 chiffres) et l\'envoie au ' . $record->phone . '. L\'ancien sera invalidé.')
+                    ->modalHeading('Renvoyer le mot de passe ?')
+                    ->modalDescription(fn ($record) => 'Génère un nouveau mot de passe (8 chiffres) et l\'envoie au ' . $record->phone . ($record->email ? ' et par email à ' . $record->email : '') . '. L\'ancien sera invalidé.')
                     ->modalSubmitActionLabel('Renvoyer')
                     ->visible(fn ($record) => filled($record->phone) && $record->user_id)
                     ->action(function ($record) {
@@ -237,19 +238,46 @@ class ParticipantResource extends Resource
                         $loginUrl = route('login');
                         $message = "DINOR. Nouveau mot de passe: {$password}. Connectez-vous avec votre numero {$user->phone} sur {$loginUrl}.";
 
-                        [$ok, $err] = app(SmsDispatcher::class)->sendNow($user->phone, SmsLog::TYPE_CREDENTIALS, $message);
+                        [$smsOk, $smsErr] = app(SmsDispatcher::class)->sendNow($user->phone, SmsLog::TYPE_CREDENTIALS, $message);
 
-                        if ($ok) {
+                        $email = $record->email ?: $user->email;
+                        $mailOk = false;
+                        $mailErr = null;
+                        if (filled($email)) {
+                            try {
+                                Notification::route('mail', $email)
+                                    ->notify(new PasswordReset($password, $user->phone));
+                                $mailOk = true;
+                            } catch (\Throwable $e) {
+                                $mailErr = $e->getMessage();
+                            }
+                        }
+
+                        $channels = [];
+                        if ($smsOk) $channels[] = 'SMS';
+                        if ($mailOk) $channels[] = 'Email';
+
+                        if (! empty($channels)) {
                             FilamentNotification::make()
                                 ->success()
-                                ->title('SMS envoyé')
-                                ->body("Nouveau mot de passe envoyé au {$user->phone}.")
+                                ->title('Mot de passe envoyé (' . implode(' + ', $channels) . ')')
+                                ->body("Nouveau mot de passe envoyé au {$user->phone}" . ($mailOk ? " et à {$email}" : '') . '.')
                                 ->send();
-                        } else {
+                        }
+
+                        if (! $smsOk) {
                             FilamentNotification::make()
                                 ->danger()
                                 ->title('Échec envoi SMS')
-                                ->body($err ?: 'Erreur inconnue. Mot de passe régénéré, communiquez-le manuellement.')
+                                ->body($smsErr ?: 'Erreur inconnue.')
+                                ->persistent()
+                                ->send();
+                        }
+                        if (filled($email) && ! $mailOk) {
+                            FilamentNotification::make()
+                                ->danger()
+                                ->title('Échec envoi Email')
+                                ->body($mailErr ?: 'Erreur inconnue.')
                                 ->persistent()
                                 ->send();
                         }

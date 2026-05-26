@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\Participant;
 use App\Models\SmsLog;
 use App\Models\User;
+use App\Notifications\PasswordReset;
 use App\Services\SmsDispatcher;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -39,22 +42,36 @@ class Login extends Component
 
         $normalized = User::normalizePhone($this->phone);
 
-        $key = 'resend-pwd:' . $normalized . '|' . request()->ip();
-        if (RateLimiter::tooManyAttempts($key, 2)) {
+        // Rate limit: 1 reinitialisation / 24h par numero (et IP).
+        $key = 'resend-pwd:' . $normalized;
+        $ipKey = 'resend-pwd-ip:' . request()->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 1)) {
             $seconds = RateLimiter::availableIn($key);
-            $this->resendError = "Trop de demandes. Réessayez dans {$seconds} secondes.";
+            $hours = (int) ceil($seconds / 3600);
+            $this->resendError = "Une réinitialisation a déjà été demandée pour ce numéro. Réessayez dans {$hours} h.";
             return;
         }
-        RateLimiter::hit($key, 600);
+
+        if (RateLimiter::tooManyAttempts($ipKey, 5)) {
+            $seconds = RateLimiter::availableIn($ipKey);
+            $this->resendError = "Trop de demandes depuis cette connexion. Réessayez dans " . (int) ceil($seconds / 60) . ' min.';
+            return;
+        }
 
         $user = User::where('phone', $normalized)->first();
 
         // Anti-énumération: réponse identique que le numéro existe ou non.
-        $this->resendStatus = 'Si ce numéro est inscrit, un nouveau mot de passe vient d\'être envoyé par SMS.';
+        $this->resendStatus = 'Si ce numéro est inscrit, un nouveau mot de passe vient d\'être envoyé par SMS (et par email si disponible). Limite: 1 réinitialisation par 24 h.';
 
         if (! $user || $user->isAdmin()) {
+            RateLimiter::hit($ipKey, 3600);
             return;
         }
+
+        // Verrou 24h consomme uniquement quand un compte existe pour eviter rate-limit aveugle.
+        RateLimiter::hit($key, 86400);
+        RateLimiter::hit($ipKey, 3600);
 
         $password = str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
         $user->forceFill([
@@ -65,11 +82,15 @@ class Login extends Component
         $loginUrl = route('login');
         $message = "DINOR. Nouveau mot de passe: {$password}. Connectez-vous avec votre numero {$user->phone} sur {$loginUrl}.";
 
-        [$ok, $err] = app(SmsDispatcher::class)->sendNow($user->phone, SmsLog::TYPE_CREDENTIALS, $message);
+        app(SmsDispatcher::class)->sendNow($user->phone, SmsLog::TYPE_CREDENTIALS, $message);
 
-        if (! $ok) {
-            // Garde anti-énumération du message succès mais log l'erreur côté admin via SmsLog.
-            // Pour l'utilisateur final, garder le message générique.
+        $email = $user->email ?: optional(Participant::where('user_id', $user->id)->first())->email;
+        if (filled($email)) {
+            try {
+                Notification::route('mail', $email)->notify(new PasswordReset($password, $user->phone));
+            } catch (\Throwable $e) {
+                // Echec mail silencieux cote utilisateur — anti-enumeration.
+            }
         }
     }
 

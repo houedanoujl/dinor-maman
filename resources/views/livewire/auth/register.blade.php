@@ -215,15 +215,30 @@
                             </div>
                         </div>
                     @else
-                        <label for="photo-input"
-                               class="mt-1 flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center transition hover:border-dinor-red hover:bg-dinor-red/5">
-                            <svg class="h-10 w-10 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-                            <div>
-                                <p class="text-sm font-semibold text-dinor-dark">Cliquez pour choisir une photo</p>
-                                <p class="mt-1 text-xs text-gray-400">JPG ou PNG — max 4 Mo</p>
-                            </div>
-                            <input id="photo-input" type="file" wire:model="photo" accept="image/jpeg,image/png" class="sr-only" />
-                        </label>
+                        <div class="relative mt-1 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 transition hover:border-dinor-red hover:bg-dinor-red/5">
+                            <label for="photo-input"
+                                   class="flex cursor-pointer flex-col items-center gap-3 px-4 py-8 text-center">
+                                <svg class="h-10 w-10 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-dinor-dark">Choisir une photo (galerie ou caméra)</p>
+                                    <p class="mt-1 text-xs text-gray-400">JPG ou PNG — max 4 Mo</p>
+                                </div>
+                            </label>
+                            {{-- Input positionne absolute opacity-0 (au lieu de sr-only/display:none) pour compat Flutter WebView (Android InAppWebView). Couvre toute la zone cliquable. --}}
+                            <input id="photo-input"
+                                   type="file"
+                                   wire:model="photo"
+                                   accept="image/*"
+                                   class="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+                        </div>
+                        <div class="mt-2 flex gap-2">
+                            <label for="photo-camera"
+                                   class="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:border-dinor-red hover:text-dinor-red">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h1.586a1 1 0 00.707-.293l1.414-1.414A1 1 0 0110.414 5h3.172a1 1 0 01.707.293l1.414 1.414A1 1 0 0017.414 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+                                Prendre une photo
+                            </label>
+                            <input id="photo-camera" type="file" wire:model="photo" accept="image/*" capture="environment" class="hidden" />
+                        </div>
                     @endif
 
                     <div x-show="uploading" class="mt-2 h-2 rounded bg-gray-200">

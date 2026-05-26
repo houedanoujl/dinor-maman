@@ -65,7 +65,7 @@
                     wire:loading.attr="disabled"
                     wire:target="resendPassword"
                     class="font-semibold text-dinor-red hover:underline disabled:opacity-50">
-                <span wire:loading.remove wire:target="resendPassword">Mot de passe oublié ? Renvoyer par SMS</span>
+                <span wire:loading.remove wire:target="resendPassword">Mot de passe oublié ? Recevoir un nouveau code (SMS + email)</span>
                 <span wire:loading wire:target="resendPassword">Envoi…</span>
             </button>
             <span>
